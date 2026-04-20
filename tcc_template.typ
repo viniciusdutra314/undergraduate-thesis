@@ -1,11 +1,26 @@
 #let tcc_generate_cover(
   body
 ) = {
-
+  // Seções seguindo a ABNT
+  show heading: it => {
+    set block(above: 2em, below: 1.5em)
+    if it.level == 1 {
+      text(weight: "bold")[#it]
+    } else if it.level == 2 {
+      text(weight: "bold")[#it]
+    } else if it.level == 3 {
+      text(weight: "bold")[#emph[#it]]
+    } else if it.level==4 {
+      text(weight: "regular")[#emph[#it]]
+    }
+    else {
+      text(weight: "regular")[#it] 
+    }
+}
   set heading(numbering: "1.1 ")
   set math.equation(numbering: "(1)")
   set text(
-    font: "Times New Roman",
+    font: "Tinos",
     size: 12pt,
     hyphenate:false,
     lang: "pt",
@@ -17,22 +32,7 @@
     leading: 0.65em
   )
   show figure: set par(leading: 0.35em)
-  pagebreak()
-  let date=datetime.today()
-  let dict=(
-    "1":"Janeiro",
-    "2":"Fevereiro",
-    "3":"Março",
-    "4":"Abril",
-    "5":"Maio",
-    "6":"Junho",
-    "7":"Julho",
-    "8":"Agosto",
-    "9":"Setembro",
-    "10":"Outubro",
-    "11":"Novembro",
-    "12":"Dezembro"
-  )  
+
 
 
   align(center)[
@@ -43,11 +43,11 @@
     #v(1fr) 
     #text(size:14pt)[VINÍCIUS SOUSA DUTRA]
     #v(1fr)
-    #text(size: 12pt)[Otimização de redes complexas para o tráfego de pacotes por meio de adaptação da capacidade de transmissão dos seus elos]
+    #text(size: 12pt)[Otimização de redes complexas para o tráfego de pacotes por meio da adaptação da capacidade de transmissão dos seus elos]
     #v(1fr)
     #text(size: 14pt)[
         São Carlos \
-        #date.day()º de  #(dict.at(str(date.month()))) de #date.year()
+       2026
     ]
   ]
   pagebreak()
@@ -63,7 +63,7 @@
     Otimização de redes complexas para o tráfego de pacotes por meio de adaptação da capacidade de transmissão dos seus elos]
   ]
 
-  v(4fr)
+  v(1.5fr)
 
   
   align(right)[
@@ -71,11 +71,9 @@
       #set par(justify: true, leading: 0.35em) 
         #text(size:12pt)[
         Trabalho de conclusão de curso apresentado ao Instituto de Física de São Carlos da Universidade de São Paulo para obtenção do título de Bacharel em Física Computacional.
-      ]
-      #v(0.5em)
-      #text(size:12pt)[
         Orientador: Prof. Dr. Gonzalo Travieso - Instituto de Física de São Carlos
-    ]
+      ]
+      
     ])
   ]
 
@@ -89,7 +87,7 @@
   set page(
     paper: "a4",
     margin: (top: 3cm, bottom: 3cm, right: 2cm,left:2cm),
-    header: context {
+    footer: context {
     let intro_matches = query(<text:introducao>)
     if intro_matches.len() > 0 {
       let intro = intro_matches.first()
@@ -100,7 +98,7 @@
         let relative_page = (current_page - intro_page) + 1
         
         align(right)[
-          #relative_page
+          #text(size:12pt)[#relative_page]
           ]
         }
       }

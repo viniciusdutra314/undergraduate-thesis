@@ -1,0 +1,259 @@
+@article{brandes_faster_2001,
+	title = {A faster algorithm for betweenness centrality*},
+	volume = {25},
+	issn = {0022-250X, 1545-5874},
+	url = {http://www.tandfonline.com/doi/abs/10.1080/0022250X.2001.9990249},
+	doi = {10.1080/0022250X.2001.9990249},
+	abstract = {The betweenness centrality index is essential in the analysis of social networks, but costly to compute. Currently, the fastest known algorithms require (n3) time and (n2) space, where n is the number of actors in the network. Motivated by the fast-growing need to compute centrality indices on large, yet very sparse, networks, new algorithms for betweenness are introduced in this paper. They require O(n + m) space and run in 0(nm) and 0(nm + n2 log n) time on unweighted and weighted networks, respectively, where m is the number of links. Experimental evidence is provided that this substantially increases the range of networks for which centrality analysis is feasible.},
+	pages = {163--177},
+	number = {2},
+	journaltitle = {The Journal of Mathematical Sociology},
+	shortjournal = {The Journal of Mathematical Sociology},
+	author = {Brandes, Ulrik},
+	urldate = {2025-12-04},
+	date = {2001-06},
+	langid = {english},
+}
+
+@software{thehdfgroupHierarchicalDataFormat2025,
+	title = {Hierarchical Data Format, version 5},
+	rights = {{BSD} 3-Clause "New" or "Revised" License},
+	url = {https://zenodo.org/doi/10.5281/zenodo.17808614},
+	doi = {10.5281/ZENODO.17808614},
+	abstract = {🔆 Executive Summary: {HDF}5 Version 2.0.0
+
+Performance Enhancements:
+
+
+
+Up to 2500\% faster Virtual Dataset read/write operations
+
+30\% faster opening and 25\% faster closing of virtual datasets.
+
+Reduced memory overhead via shared name strings and optimized spatial search algorithms for virtual datasets.
+
+
+Significant Advancements:
+
+
+
+Full {UTF}-8 filename support on Windows, resolving encoding issues from previous versions.
+
+Introduction of bfloat16 predefined datatypes for efficient machine learning conversions.
+
+First-class support for complex numbers, eliminating manual workarounds in scientific applications.
+
+A new, larger chunk size limit, in multi-petabytes, replaces the previous 4 {GiB} limit.
+
+
+Updated Foundation:
+
+
+
+New file format version (4.0) and compliance with the C11 standard.
+
+Adopted semantic versioning to clearly convey changes between versions.
+
+
+
+
+[!{IMPORTANT}]
+
+
+
+Transitioned to {CMake}-only builds, and Autotools is no longer in use.
+
+Renamed library state variables, notably {HDF}5\_ENABLE\_PARALLEL is now {HDF}5\_PROVIDES\_PARALLEL, see {PR} \#5716 for more details.
+
+The default setting for H5Fset\_libver\_bounds has been updated to set the lower bound to the {HDF}5 library version 1.8. This change ensures that users can take advantage of the library's optimal performance and the latest features by default. If users need their files to be compatible with older versions of the {HDF}5 library, they will need to adjust this lower bound manually.
+
+
+
+Enhanced Features:
+
+
+
+Improved {ROS}3 {VFD} capabilities using the aws-c-s3 library.
+
+
+Java Enhancements:
+
+
+
+Java {FFM} bindings generated for the C library if Java 25+ available and {JNI} option is {FALSE}.
+
+Enhanced Maven artifact deployment with comprehensive multi-platform support (Linux, Windows, {macOS} x86\_64, {macOS} aarch64).
+
+Complete Java examples Maven integration (org.hdfgroup:hdf5-java-examples) with cross-platform {CI}/{CD} testing.
+
+
+Acknowledgements:
+
+We would like to thank the many {HDF}5 community members who contributed to {HDF}5 2.0.},
+	version = {2.0.0},
+	publisher = {Zenodo},
+	author = {The {HDF} Group},
+	urldate = {2026-03-03},
+	date = {2025-12-04},
+}
+
+@article{noauthor_ieee_2019,
+	title = {{IEEE} Standard for Floating-Point Arithmetic},
+	url = {https://ieeexplore.ieee.org/document/8766229},
+	doi = {10.1109/IEEESTD.2019.8766229},
+	abstract = {This standard specifies interchange and arithmetic formats and methods for binary and decimal floating-point arithmetic in computer programming environments. This standard specifies exception conditions and their default handling. An implementation of a floating-point system conforming to this standard may be realized entirely in software, entirely in hardware, or in any combination of software and hardware. For operations specified in the normative part of this standard, numerical results and exceptions are uniquely determined by the values of the input data, sequence of operations, and destination formats, all under user control.},
+	pages = {1--84},
+	journaltitle = {{IEEE} Std 754-2019 (Revision of {IEEE} 754-2008)},
+	urldate = {2026-02-17},
+	date = {2019-07},
+	keywords = {Floating-point arithmetic, {IEEE} 754, {IEEE} Standards, {NaN}, arithmetic, binary, computer, decimal, exponent, floating-point, format, interchange, number, rounding, significand, subnormal.},
+}
+
+@book{trudeauIntroductionGraphTheory1993,
+	title = {Introduction to Graph Theory},
+	isbn = {978-0-486-67870-2},
+	url = {https://books.google.com.br/books?id=h6sS_mrJDaEC},
+	series = {Dover Books on Mathematics},
+	publisher = {Dover Pub.},
+	author = {Trudeau, R.J.},
+	date = {1993},
+	lccn = {lc93032996},
+}
+
+@article{brandesMaintainingDualityCloseness2016,
+	title = {Maintaining the duality of closeness and betweenness centrality},
+	volume = {44},
+	issn = {03788733},
+	url = {https://linkinghub.elsevier.com/retrieve/pii/S0378873315000738},
+	doi = {10.1016/j.socnet.2015.08.003},
+	abstract = {Betweenness centrality is generally regarded as a measure of others’ dependence on a given node, and therefore as a measure of potential control. Closeness centrality is usually interpreted either as a measure of access efﬁciency or of independence from potential control by intermediaries. Betweenness and closeness are commonly assumed to be related for two reasons: ﬁrst, because of their conceptual duality with respect to dependency, and second, because both are deﬁned in terms of shortest paths.},
+	pages = {153--159},
+	journaltitle = {Social Networks},
+	shortjournal = {Social Networks},
+	author = {Brandes, Ulrik and Borgatti, Stephen P. and Freeman, Linton C.},
+	urldate = {2025-12-07},
+	date = {2016-01},
+	langid = {english},
+}
+
+@article{boeingModelingAnalyzingUrban2025,
+	title = {Modeling and Analyzing Urban Networks and Amenities With {OSMnx}},
+	volume = {57},
+	issn = {1538-4632},
+	url = {https://onlinelibrary.wiley.com/doi/abs/10.1111/gean.70009},
+	doi = {10.1111/gean.70009},
+	abstract = {{OSMnx} is a Python package for downloading, modeling, analyzing, and visualizing urban networks and any other geospatial features from {OpenStreetMap} data. A large and growing body of literature uses it to conduct scientific studies across the disciplines of geography, urban planning, transport engineering, computer science, and others. The {OSMnx} project has recently developed and implemented many new features, modeling capabilities, and analytical methods. The package now encompasses substantially more functionality than was previously documented in the literature. This article introduces {OSMnx}'s modern capabilities, usage, and design—in addition to the scientific theory and logic underlying them. It shares lessons learned in geospatial software development and reflects on open science's implications for urban modeling and analysis.},
+	pages = {567--577},
+	number = {4},
+	journaltitle = {Geographical Analysis},
+	author = {Boeing, Geoff},
+	urldate = {2026-03-03},
+	date = {2025},
+	langid = {english},
+	note = {\_eprint: https://onlinelibrary.wiley.com/doi/pdf/10.1111/gean.70009},
+	keywords = {geospatial data science, open science, open-source software, spatial networks, urban modeling},
+}
+
+@article{brandesVariantsShortestpathBetweenness2008a,
+	title = {On variants of shortest-path betweenness centrality and their generic computation},
+	volume = {30},
+	rights = {https://www.elsevier.com/tdm/userlicense/1.0/},
+	issn = {03788733},
+	url = {https://linkinghub.elsevier.com/retrieve/pii/S0378873307000731},
+	doi = {10.1016/j.socnet.2007.11.001},
+	abstract = {Betweenness centrality based on shortest paths is a standard measure of control utilized in numerous studies and implemented in all relevant software tools for network analysis. In this paper, a number of variants are reviewed, placed into context, and shown to be computable with simple variants of the algorithm commonly used for the standard case.},
+	pages = {136--145},
+	number = {2},
+	journaltitle = {Social Networks},
+	shortjournal = {Social Networks},
+	author = {Brandes, Ulrik},
+	urldate = {2025-12-06},
+	date = {2008-05},
+	langid = {english},
+}
+
+@article{dreyerOptimalUniformShortest2025,
+	location = {Singapore},
+	title = {Optimal Uniform Shortest Path Sampling},
+	volume = {15411},
+	url = {https://link.springer.com/10.1007/978-981-96-2845-2_11},
+	doi = {10.1007/978-981-96-2845-2_11},
+	abstract = {Random generation of shortest paths in graphs is utilized across various domains, including traffic-flow simulation and network topology exploration. In this paper, we address the challenge of uniform shortest path sampling in graphs from an algorithmic perspective. We introduce a new uniform shortest path sampling algorithm that uses a biased random walk operating in two stages. We demonstrate that our algorithm, when combined with a new variant of the Alias method is optimal in terms of worst-case running time and number of random bits needed, among all algorithms in its class. Furthermore, we present an efficient implementation of our algorithm in a low-level programming language and evaluate it on both real-world and synthetic datasets. We compare our theoretically optimal algorithm with other variants to assess its practical performance.},
+	pages = {160--179},
+	journaltitle = {{WALCOM}: Algorithms and Computation},
+	publisher = {Springer Nature Singapore},
+	author = {Dreyer, Simon and Genitrini, Antoine and Naima, Mehdi},
+	editor = {Nakano, Shin-ichi and Xiao, Mingyu},
+	urldate = {2025-12-06},
+	date = {2025},
+	langid = {english},
+}
+
+@misc{javadi-abhariQuantumComputingQiskit2024,
+	title = {Quantum computing with Qiskit},
+	url = {http://arxiv.org/abs/2405.08810},
+	doi = {10.48550/arXiv.2405.08810},
+	abstract = {We describe Qiskit, a software development kit for quantum information science. We discuss the key design decisions that have shaped its development, and examine the software architecture and its core components. We demonstrate an end-to-end workflow for solving a problem in condensed matter physics on a quantum computer that serves to highlight some of Qiskit's capabilities, for example the representation and optimization of circuits at various abstraction levels, its scalability and retargetability to new gates, and the use of quantum-classical computations via dynamic circuits. Lastly, we discuss some of the ecosystem of tools and plugins that extend Qiskit for various tasks, and the future ahead.},
+	number = {{arXiv}:2405.08810},
+	publisher = {{arXiv}},
+	author = {Javadi-Abhari, Ali and Treinish, Matthew and Krsulich, Kevin and Wood, Christopher J. and Lishman, Jake and Gacon, Julien and Martiel, Simon and Nation, Paul D. and Bishop, Lev S. and Cross, Andrew W. and Johnson, Blake R. and Gambetta, Jay M.},
+	urldate = {2026-03-03},
+	date = {2024-06-19},
+	langid = {english},
+	eprinttype = {arxiv},
+	eprint = {2405.08810 [quant-ph]},
+	keywords = {Computer Science - Emerging Technologies, Quantum Physics},
+}
+
+@article{jungRustBeltSecuringFoundations2017,
+	title = {{RustBelt}: securing the foundations of the Rust programming language},
+	volume = {2},
+	url = {https://dl.acm.org/doi/10.1145/3158154},
+	doi = {10.1145/3158154},
+	shorttitle = {{RustBelt}},
+	abstract = {Rust is a new systems programming language that promises to overcome the seemingly fundamental tradeoff between high-level safety guarantees and low-level control over resource management. Unfortunately, none of Rust's safety claims have been formally proven, and there is good reason to question whether they actually hold. Specifically, Rust employs a strong, ownership-based type system, but then extends the expressive power of this core type system through libraries that internally use unsafe features. In this paper, we give the first formal (and machine-checked) safety proof for a language representing a realistic subset of Rust. Our proof is extensible in the sense that, for each new Rust library that uses unsafe features, we can say what verification condition it must satisfy in order for it to be deemed a safe extension to the language. We have carried out this verification for some of the most important libraries that are used throughout the Rust ecosystem.},
+	pages = {66:1--66:34},
+	issue = {{POPL}},
+	journaltitle = {Proc. {ACM} Program. Lang.},
+	author = {Jung, Ralf and Jourdan, Jacques-Henri and Krebbers, Robbert and Dreyer, Derek},
+	urldate = {2026-03-03},
+	date = {2017-12-27},
+}
+
+@article{treinish_rustworkx_2022,
+	title = {rustworkx: A High-Performance Graph Library for Python},
+	volume = {7},
+	issn = {2475-9066},
+	url = {http://arxiv.org/abs/2110.15221},
+	doi = {10.21105/joss.03968},
+	shorttitle = {rustworkx},
+	abstract = {In rustworkx, we provide a high-performance, flexible graph library for Python. rustworkx is inspired by {NetworkX} but addresses many performance concerns of the latter. rustworkx is written in Rust and is particularly suited for performance-sensitive applications that use graph representations.},
+	pages = {3968},
+	number = {79},
+	journaltitle = {Journal of Open Source Software},
+	shortjournal = {{JOSS}},
+	author = {Treinish, Matthew and Carvalho, Ivan and Tsilimigkounakis, Georgios and Sá, Nahum},
+	urldate = {2026-02-01},
+	date = {2022-11-01},
+	eprinttype = {arxiv},
+	eprint = {2110.15221 [cs]},
+	keywords = {Computer Science - Data Structures and Algorithms},
+}
+
+@article{chen_traffic_2012,
+	title = {Traffic Dynamics on Complex Networks: A Survey},
+	volume = {2012},
+	issn = {1563-5147},
+	url = {https://onlinelibrary.wiley.com/doi/10.1155/2012/732698},
+	doi = {10.1155/2012/732698},
+	shorttitle = {Traffic Dynamics on Complex Networks},
+	abstract = {Traffic dynamics on complex networks are intriguing in recent years due to their practical implications in real communication networks. In this survey, we give a brief review of studies on traffic ro...},
+	pages = {732698},
+	number = {1},
+	journaltitle = {Mathematical Problems in Engineering},
+	publisher = {John Wiley \& Sons, Ltd},
+	author = {Chen, Shengyong and Huang, Wei and Cattani, Carlo and Altieri, Giuseppe},
+	urldate = {2026-02-17},
+	date = {2012-01-01},
+	langid = {english},
+}
