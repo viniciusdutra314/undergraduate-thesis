@@ -3,6 +3,7 @@
 ) = {
   // Seções seguindo a ABNT
   show heading: it => {
+    set text(size:12pt)
     set block(above: 2em, below: 1.5em)
     if it.level == 1 {
       text(weight: "bold")[#it]
@@ -33,7 +34,12 @@
   )
   show figure: set par(leading: 0.35em)
 
+  let titulo = "Otimização de redes complexas para o tráfego de pacotes por meio da adaptação da capacidade de transmissão dos seus elos"
 
+  assert(
+    not titulo.ends-with("."), 
+    message: "Erro: O título do trabalho deve ser inserido sem ponto final."
+  )
 
   align(center)[
     #text(size: 14pt)[#upper[
@@ -43,7 +49,7 @@
     #v(1fr) 
     #text(size:14pt)[VINÍCIUS SOUSA DUTRA]
     #v(1fr)
-    #text(size: 12pt)[Otimização de redes complexas para o tráfego de pacotes por meio da adaptação da capacidade de transmissão dos seus elos]
+    #text(size: 12pt)[#titulo]
     #v(1fr)
     #text(size: 14pt)[
         São Carlos \
@@ -59,8 +65,7 @@
   v(5fr) 
 
   align(center)[
-    #text(size:12pt)[
-    Otimização de redes complexas para o tráfego de pacotes por meio de adaptação da capacidade de transmissão dos seus elos]
+    #text(size:12pt)[#titulo]
   ]
 
   v(1.5fr)
