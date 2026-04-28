@@ -60,7 +60,7 @@
   align(center)[
     #text(size:12pt)[
     Vinícius Sousa Dutra
-  ]
+  ] <label:capa>
 ]
   v(5fr) 
 
@@ -93,7 +93,7 @@
     paper: "a4",
     margin: (top: 3cm, bottom: 3cm, right: 2cm,left:2cm),
     footer: context {
-    let intro_matches = query(<text:introducao>)
+    let intro_matches = query(<label:capa>)
     if intro_matches.len() > 0 {
       let intro = intro_matches.first()
       let current_page = here().page()

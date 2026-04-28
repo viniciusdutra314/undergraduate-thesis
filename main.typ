@@ -1,8 +1,8 @@
 #import "tcc_template.typ": tcc_generate_cover
 #import "@preview/algorithmic:1.0.7": *
 #import "@preview/wordometer:0.1.5":*
-
-
+#import "@preview/algorithmic:1.0.7": *
+#import "@preview/diagraph:0.3.7"
 #{
   if sys.version!=version(0,14,2){
     panic("O documento foi feito em Typst 0.14.2, talvez não funcione em outra versão")
@@ -14,23 +14,13 @@
 #heading("RESUMO",numbering: none
 ) <text:introducao>
 
-#context {
-  let secoes_presentes =  query(heading.where(level: 1)).map(h => h.body.text)
-  
-  let secoes = (
-    "RESUMO", 
-    "INTRODUÇÃO", 
-    "MATERIAIS E MÉTODOS", 
-    "RESULTADOS", 
-    "CONCLUSÕES E CONSIDERAÇÕES FINAIS",
-    "REFERÊNCIAS"
-  )
-  assert(secoes.sorted()==secoes_presentes.sorted(),message: "Existe uma seção que não deveria existir ou que está faltando")
-}
+
+
 
 
 #let resumo_conteudo=par[
-  #lorem(200).]
+  #lorem(500)
+]
 
 
 //invariantes sobre a seção de resumo
@@ -65,15 +55,33 @@ O presente trabalho realiza simulações de tráfego em redes complexas, com o o
 - *Análise Topológica:* Investigar a relação entre métricas topológicas, como a Centralidade de Intermediação de Aresta ($c_B(e)$)  e o tráfego resultante em diferentes redes como Erdos-Rényi, Barabási-Albert, redes em grade, etc.
 
 
-== Teoria de grafos
-Definimos um grafo $G$ como um par ordenado $G = (V, E)$, onde $V$ é um conjunto finito e não vazio de elementos denominados *vértices*, e $E$ é um conjunto de pares não ordenados de elementos de $V$, denominados *arestas*. @trudeauIntroductionGraphTheory1993. 
+= Tráfego de pacotes em redes complexas
+
+== Tipos de grafos
+Embora existam variações terminológicas na literatura, define-se formalmente um grafo $G$ como um par ordenado $G = (V, E)$, $V$ representa um conjunto finito e não vazio de elementos denominados *vértices*, enquanto $E$ consiste em um conjunto de pares não ordenados de elementos pertencentes a $V$, denominados *arestas* @trudeauIntroductionGraphTheory1993.
+
+
+
+Um *grafo dirigido*, ou simplesmente *dígrafo*, caracteriza-se por um conjunto $E$ composto por pares ordenados de vértices de $V$. Diferente dos grafos não direcionados, a relação de adjacência em um dígrafo implica que $(u, v) != (v, u)$, estabelecendo uma orientação específica para a conexão entre os nós.
+
+Adicionalmente, um *grafo ponderado* é definido pela associação de uma função peso $w: E -> RR$, que atribui a cada aresta um valor escalar real. No contexto de tráfego, tal grandeza frequentemente representa o custo, a capacidade ou a "intensidade" da conexão entre dois pontos.
+
+
+
+
+
+Neste trabalho, salvo indicação contrária, o termo "grafo" se refere a um grafo não direcionado e não ponderado. Quaisquer variações a essa definição padrão serão explicitamente detalhadas no decorrer do texto.
+
+== Propriedades de um grafo
 
 Dois vértices $u, v in V$ são ditos *adjacentes* se existir uma aresta ${u, v} in E$. O vértice $v$ é denominado *vizinho* de $u$, e vice-versa. O conjunto de todos os vértices adjacentes a um vértice $v$ define a sua *vizinhança*, denotada por $N_G (v)$. A cardinalidade deste conjunto, que representa o número de arestas incidentes ao vértice, define o seu *grau*, denotado por $deg(v)$.
+
 
 Um *caminho* entre dois vértices $s, t in V$ é definido como uma sequência de vértices $P = (v_0, v_1, ..., v_k)$ tal que $v_0 = s$, $v_k = t$, e para todo $i$ tal que $0 <= i < k$  ${v_i, v_{i+1}} in E$. O *comprimento* do caminho é dado por $k$, que corresponde ao número de arestas na sequência. É importante notar que tal caminho pode não existir; nesse caso, diz-se que $t$ é inatingível a partir de $s$. Um grafo é dito *conexo* se, para todo par de vértices, existe pelo menos um caminho que os conecta, caso contrário, o grafo é classificado como *desconexo*.
 
 Um *caminho mínimo* entre dois vértices $s$ e $t$ é um caminho cujo comprimento $k$ é o menor possível dentre todos os caminhos existentes entre esses vértices. Ressalta-se que o caminho mínimo não é necessariamente único.  A *distância* entre $s$ e $t$, denotada por $d_(s t)$, é definida como o comprimento desse caminho mínimo. Convenciona-se que, caso não exista caminho entre $s$ e $t$, $d(s, t) = infinity$. 
-#footnote[Em implementações computacionais, sistemas que utilizam a representação de ponto flutuante segundo o padrão IEEE 754 @noauthor_ieee_2019 possuem uma representação de infinito com propriedades desejáveis para vértices inatingíveis.]
+#footnote[Em implementações computacionais, sistemas que utilizam a representação de ponto flutuante segundo o padrão IEEE 754 
+@IEEEStandardFloatingPoint2019 possuem uma representação de infinito com propriedades desejáveis para vértices inatingíveis.]
 
 A partir da definição de caminhos mínimos, derivam-se duas métricas topológicas fundamentais para a caracterização do modelo de tráfego. A primeira é a *distância média* $chevron.l L chevron.r$, que representa o valor esperado do comprimento do caminho mínimo entre dois vértices quaisquer da rede.
 
@@ -93,10 +101,34 @@ A definição de $c_B (e)$ foi escolhida com o fator de normalização para que 
 $ chevron.l L chevron.r = sum_(e in E) c_B (e) $
 
 
+Modelos de trafego
+
+tipos de otimização possíveis
+
+políticas de filas
+
+Roteamento dinamicos
+
+
+
+
+
+
+= MATERIAIS E MÉTODOS 
+
+
+Dada a elevada combinatória de dinâmicas em grafos de médio porte ($|V| approx 10^3$), o simulador foi desenvolvido na linguagem Rust visando assegurar a viabilidade computacional das simulações em hardware convencional. Esta escolha fundamenta-se na necessidade de conciliar o desempenho de uma linguagem compilada a garantias rigorosas de segurança de memória, concorrência sem condições de corrida e corretude dos resultados @jungRustBeltSecuringFoundations2017. A implementação atual permite a execução paralela de simulações em redes compostas por milhares de nós, utilizando a biblioteca de alto desempenho #text(style: "italic")[rustworkx_core]
+@treinishRustworkxHighPerformanceGraph2022 para a manipulação eficiente de algoritmos e estruturas de dados.
+
+Os gráficos e as análises do dados foi realizado na linguagem de alto nível Julia @bezansonJuliaFreshApproach2017 com o usado da biblioteca Makie
+@danischMakiejlFlexibleHighperformance2021, oferecendo um equilíbrio entre agilidade,exploração interativa e desempenho
+
+A verificação da corretude do simulador foi realizada por uma extensa
 
 == Formalização do modelo de tráfego de pacotes <sec:formalização_modelo_trafego>
 
-Baseado na meta-análise de @chen_traffic_2012, utilize-se um modelo de trafego simples porém usual em artigos de trafego de pacotes, o sistema é descrito por um grafo e um conjunto de regras dinâmicas de geração e roteamento de informação.
+Baseado na meta-análise de 
+@chenTrafficDynamicsComplex2012, utilize-se um modelo de trafego simples porém usual em artigos de trafego de pacotes, o sistema é descrito por um grafo e um conjunto de regras dinâmicas de geração e roteamento de informação.
 
 
 Seja $G = (V, E)$ um grafo conexo, não direcionado, onde $V$ representa o conjunto de nós (roteadores/hosts) e $E$ o conjunto de arestas (links de comunicação). A dinâmica do sistema evolui em passos de tempo discretos conforme as seguintes regras:
@@ -116,12 +148,11 @@ Um resultado fundamental desse modelo é a existência de uma *taxa de geração
 
 + *Fase de Fluxo Livre* ($rho < rho_c$): Após um período transiente de estabilização, a rede atinge um _estado estacionário_. Nesse regime, a quantidade total de pacotes na rede oscila em torno de um valor médio constante
 
++ $rho = rho_c$
+
 + *Fase de Congestionamento* ($rho > rho_c$): O sistema entra em um regime de saturação onde a taxa de geração de pacotes supera a capacidade de roteamento da rede. Isso resulta em um acúmulo linear de mensagens nas filas ao longo do tempo, caracterizando um estado não estacionário onde o tempo de espera e o atraso dos pacotes divergem para o infinito.
 
-
-
-=== Métrica de desempenho e atraso
-
+== Métrica de desempenho e atraso
 Para caracterizar a eficiência do roteamento e identificar a transição de fase, define-se o *Atraso Médio* ($delta$). Esta grandeza representa o valor esperado do excesso de tempo de trânsito em relação ao cenário ideal de fluxo livre, sendo definida pela razão entre o tempo de permanência no grafo e a distância geodésica entre a origem e o destino:
 
 $ delta := chevron.l (T_( s t)) / (d_(s t)) - 1 chevron.r $
@@ -134,14 +165,151 @@ Nesta formulação:
 
 Desta forma, $delta$ atua como um *parâmetro de ordem*: valores próximos de zero indicam um regime de *fluxo livre*, enquanto uma divergência em $delta$ sinaliza a fase de *congestionamento* da rede, onde o tempo de espera nas filas domina a dinâmica do sistema.
 
-= MATERIAIS E MÉTODOS 
+
+== Seleção uniforme em $cal(W)_(s t)$
+
+Um desafio computacional intrínseco ao roteamento de caminhos mínimos sem viés reside na magnitude de $sigma_(s t)$, que frequentemente assume valores proibitivos para o armazenamento explícito de todos os caminhos possíveis #footnote[Como $sigma_(s t)$ pode atingir ordens de magnitude elevadas, há risco de *overflow* em tipos numéricos de tamanho fixo. O simulador desenvolvido utiliza a biblioteca *num-bigint*, que provê inteiros de precisão arbitrária.]. Para mitigar essa limitação, utiliza-se a estratégia de amostragem uniforme fundamentada em @dreyerOptimalUniformShortest2025. Tal método viabiliza a escolha aleatória de caminhos utilizando apenas a matriz de distâncias $d_(s t)$ e a matriz de contagem de caminhos mínimos $sigma_(s t)$.
+
+Para a implementação deste método, define-se o conjunto de **vértices predecessores** de um nó $v$ em relação a uma origem $s$. Um vértice $u$ é considerado predecessor de $v$ se for adjacente a $v$ e pertencer a pelo menos um caminho mínimo que parte de $s$ e chega a $v$. Formalmente, o conjunto de predecessores é dado por $N^-(v) = {u in N(v) : d_(s u) = d_(s  v) - 1}$.
+
+#let original_graph=```
+graph {
+    0 [ ]
+    1 [ ]
+    2 [ ]
+    3 [ ]
+    4 [ ]
+    5 [ ]
+    6 [ ]
+    7 [ ]
+    8 [ ]
+    0 -- 1 [ ]
+    0 -- 2 [ ]
+    0 -- 3 [ ]
+    1 -- 2 [ ]
+    1 -- 4 [ ]
+    2 -- 4 [ ]
+    3 -- 4 [ ]
+    3 -- 5 [ ]
+    4 -- 6 [ ]
+    4 -- 7 [ ]
+    5 -- 6 [ ]
+    5 -- 7 [ ]
+    6 -- 8 [ ]
+    7 -- 8 [ ]
+}
+```.text
+  
 
 
-Dada a elevada combinatória de dinâmicas em grafos de médio porte ($|V| approx 10^3$), o simulador foi desenvolvido na linguagem Rust visando assegurar a viabilidade computacional das simulações em hardware convencional. Esta escolha fundamenta-se na necessidade de conciliar o desempenho de uma linguagem compilada a garantias rigorosas de segurança de memória, concorrência sem condições de corrida e corretude dos resultados @jungRustBeltSecuringFoundations2017. A implementação atual permite a execução paralela de simulações em redes compostas por milhares de nós, utilizando a biblioteca de alto desempenho _rustworkx_ @treinish_rustworkx_2022 para a manipulação eficiente de algoritmos e estruturas de dados.
+#let graph_dag=```
+digraph {
+    rankdir="BT"
+    0 [ label = 0]
+    1 [ label = 1]
+    2 [ label = 1]
+    3 [ label = 1]
+    4 [ label = 2]
+    5 [ label = 2]
+    6 [ label = 3]
+    7 [ label = 3]
+    8 [ label = 4]
+    1 -> 0 [ label = "1.00", color = "#0095e7"]
+    2 -> 0 [ label = "1.00", color = "#0095e7"]
+    3 -> 0 [ label = "1.00", color = "#0095e7"]
+    4 -> 1 [ label = "0.33", color = "#c1d0e7"]
+    4 -> 2 [ label = "0.33", color = "#c1d0e7"]
+    4 -> 3 [ label = "0.33", color = "#c1d0e7"]
+    5 -> 3 [ label = "1.00", color = "#0095e7"]
+    6 -> 4 [ label = "0.75", color = "#7caee7"]
+    6 -> 5 [ label = "0.25", color = "#cbd6e7"]
+    7 -> 4 [ label = "0.75", color = "#7caee7"]
+    7 -> 5 [ label = "0.25", color = "#cbd6e7"]
+    8 -> 6 [ label = "0.50", color = "#aac4e7"]
+    8 -> 7 [ label = "0.50", color = "#aac4e7"]
+}
+  ```.text
 
-A verificação da corretude do simulador foi realizada por uma extensa
+
+
+#let n = 12
+#let mapping = (:)
+
+#for i in range(n) {
+  let letter = std.str.from-unicode(65 + i)
+  mapping.insert(str(i), letter)
+}
+
+Para deixar o layout equilibrado e profissional, o segredo é controlar a proporção do bloco em relação à página e garantir que os grafos não fiquem "esticados".
+
+Como o grafo da esquerda agora é horizontal (LR) e o da direita é vertical (BT), eles têm formatos naturais diferentes. Ajustei o grid para dar um respiro maior e fixei uma largura de bloco que não ocupa a página inteira, o que geralmente causa essa sensação de "grafo gigante".
+Code snippet
+
+#import "@preview/diagraph:0.3.1": *
+
+// ... seus let mappings e strings de grafos permanecem iguais ...
+
+#align(center)[
+  #figure(
+    box( // Usei box em vez de rect para um controle de largura mais natural
+      width: 85%, 
+      stroke: 0.5pt + gray.lighten(50%),
+      fill: gray.lighten(98%),
+      radius: 6pt,
+      inset: 15pt,
+      grid(
+        columns: (1fr, 1fr), // O grafo LR (horizontal) costuma precisar de um pouco mais de largura
+        gutter: 25pt,
+        align: horizon, // Alinha os dois verticalmente pelo centro
+        [
+          #set align(center)
+          #text(size: 10pt, weight: "bold", gray.darken(50%))[Grafo Original]
+          #v(5pt)
+          #diagraph.render(original_graph, labels: mapping, height: 50%)
+        ],
+        [
+          #set align(center)
+          #text(size: 10pt, weight: "bold", gray.darken(50%))[DAG de Caminhos Mínimos]
+          #v(5pt)
+          #diagraph.render(graph_dag, labels: mapping, height: 50%) // Um pouco menor para não sufocar
+        ]
+      )
+    ),
+    caption: [Comparação entre a topologia original e a hierarquia de roteamento.],
+  )
+]
+
+O método consiste em modelar o roteamento como uma cadeia de Markov com estado inicial em $t$ e estado terminal em $s$. Para um vértice $u$, a probabilidade de transição para um predecessor $v in N^-(u)$ é definida pelo peso:
+
+$ P(u -> v) = sigma_(s v) / sigma_(s u) $
+
+Demonstra-se que este conjunto de probabilidades resulta em uma seleção estritamente uniforme. Seja $p = (v_k, v_(k-1), dots, v_0)$ um caminho mínimo entre $t$ e $s$, com $v_k = t$ e $v_0 = s$. A probabilidade de selecionar este caminho específico $P(p)$ é o produtório das transições de cada salto:
+
+$ P(p) = product_(i=1)^(k) P(v_i -> v_(i-1)) = product_(i=1)^(k) sigma_(s v_(i-1)) / sigma_(s v_i) $
+
+Ao expandir o produtório, observa-se um cancelamento telescópico:
+
+$ P(p) = sigma_(s v_(k-1)) / sigma_(s v_k) dot sigma_(s v_(k-2)) / sigma_(s v_(k-1)) dot dots dot sigma_(s v_0) / sigma_(s v_1) = sigma_(s v_0) / sigma_(s v_k) $
+
+Considerando que $v_0 = s$, o caso base $sigma_(s s) = 1$ e $v_k = t$, obtém-se:
+
+$ P(p) = 1 / sigma_(s t) $
+
+Visto que $P(p)$ é idêntica para qualquer caminho $p in cal(W)_(s t)$, a seleção é não enviesada. Em grafos não direcionados, $d_(s t)$ é obtida via busca em largura (BFS) em $O(|V|^2 + |V||E|)$. Paralelamente, $sigma_(s v)$ é calculada pela relação de recorrência:
+
+$ sigma_(s v) = cases(
+  1 & quad "se" v = s,
+  sum_(u in N^-(v)) sigma_(s u) & quad "se" v != s
+) $
+
+
+
 
 = RESULTADOS
+
+gráficos e discussões e mini conclusões
+
+
 = CONCLUSÕES E CONSIDERAÇÕES FINAIS
 
 #bibliography("zotero.bib",
