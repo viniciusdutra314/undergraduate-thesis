@@ -170,7 +170,7 @@ Desta forma, $delta$ atua como um *parâmetro de ordem*: valores próximos de ze
 
 Um desafio computacional intrínseco ao roteamento de caminhos mínimos sem viés reside na magnitude de $sigma_(s t)$, que frequentemente assume valores proibitivos para o armazenamento explícito de todos os caminhos possíveis #footnote[Como $sigma_(s t)$ pode atingir ordens de magnitude elevadas, há risco de *overflow* em tipos numéricos de tamanho fixo. O simulador desenvolvido utiliza a biblioteca *num-bigint*, que provê inteiros de precisão arbitrária.]. Para mitigar essa limitação, utiliza-se a estratégia de amostragem uniforme fundamentada em @dreyerOptimalUniformShortest2025. Tal método viabiliza a escolha aleatória de caminhos utilizando apenas a matriz de distâncias $d_(s t)$ e a matriz de contagem de caminhos mínimos $sigma_(s t)$.
 
-Para a implementação deste método, define-se o conjunto de **vértices predecessores** de um nó $v$ em relação a uma origem $s$. Um vértice $u$ é considerado predecessor de $v$ se for adjacente a $v$ e pertencer a pelo menos um caminho mínimo que parte de $s$ e chega a $v$. Formalmente, o conjunto de predecessores é dado por $N^-(v) = {u in N(v) : d_(s u) = d_(s  v) - 1}$.
+Para a implementação deste método, define-se o conjunto de *vértices predecessores* de um nó $v$ em relação a uma origem $s$. Um vértice $u$ é considerado predecessor de $v$ se for adjacente a $v$ e pertencer a pelo menos um caminho mínimo que parte de $s$ e chegue em $v$. Formalmente, o conjunto de predecessores é dado por $N^-(v) = {u in N(v) : d_(s u) = d_(s  v) - 1}$.
 
 #let original_graph=```
 graph {
@@ -240,27 +240,19 @@ digraph {
   mapping.insert(str(i), letter)
 }
 
-Para deixar o layout equilibrado e profissional, o segredo é controlar a proporção do bloco em relação à página e garantir que os grafos não fiquem "esticados".
-
-Como o grafo da esquerda agora é horizontal (LR) e o da direita é vertical (BT), eles têm formatos naturais diferentes. Ajustei o grid para dar um respiro maior e fixei uma largura de bloco que não ocupa a página inteira, o que geralmente causa essa sensação de "grafo gigante".
-Code snippet
-
-#import "@preview/diagraph:0.3.1": *
-
-// ... seus let mappings e strings de grafos permanecem iguais ...
 
 #align(center)[
   #figure(
-    box( // Usei box em vez de rect para um controle de largura mais natural
+    box( 
       width: 85%, 
       stroke: 0.5pt + gray.lighten(50%),
       fill: gray.lighten(98%),
       radius: 6pt,
       inset: 15pt,
       grid(
-        columns: (1fr, 1fr), // O grafo LR (horizontal) costuma precisar de um pouco mais de largura
+        columns: (1fr, 1fr), 
         gutter: 25pt,
-        align: horizon, // Alinha os dois verticalmente pelo centro
+        align: horizon, 
         [
           #set align(center)
           #text(size: 10pt, weight: "bold", gray.darken(50%))[Grafo Original]
@@ -271,11 +263,11 @@ Code snippet
           #set align(center)
           #text(size: 10pt, weight: "bold", gray.darken(50%))[DAG de Caminhos Mínimos]
           #v(5pt)
-          #diagraph.render(graph_dag, labels: mapping, height: 50%) // Um pouco menor para não sufocar
+          #diagraph.render(graph_dag, labels: mapping, height: 50%)
         ]
       )
     ),
-    caption: [Comparação entre a topologia original e a hierarquia de roteamento.],
+    caption: [Comparação entre a topologia original e DAG .],
   )
 ]
 
