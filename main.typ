@@ -1,7 +1,6 @@
 #import "tcc_template.typ": tcc_generate_cover
 #import "@preview/algorithmic:1.0.7": *
 #import "@preview/wordometer:0.1.5":*
-#import "@preview/algorithmic:1.0.7": *
 #import "@preview/diagraph:0.3.7"
 #{
   if sys.version!=version(0,14,2){
@@ -58,17 +57,22 @@ O presente trabalho realiza simulações de tráfego em redes complexas, com o o
 = Tráfego de pacotes em redes complexas
 
 == Tipos de grafos
-Embora existam variações terminológicas na literatura, define-se formalmente um grafo $G$ como um par ordenado $G = (V, E)$, $V$ representa um conjunto finito e não vazio de elementos denominados *vértices*, enquanto $E$ consiste em um conjunto de pares não ordenados de elementos pertencentes a $V$, denominados *arestas* @trudeauIntroductionGraphTheory1993.
 
+#let definição_grafo=[
+Embora existam variações terminológicas  na literatura, define-se um grafo $G$ como um par ordenado $G = (V, E)$, $V$ representa um conjunto finito e não vazio de elementos denominados *vértices*, enquanto $E$ consiste em um conjunto de pares não ordenados de elementos pertencentes a $V$, denominados *arestas* @trudeauIntroductionGraphTheory1993.
+]
+#definição_grafo
 
+#let definição_digrafo=[
+  Um *grafo dirigido*, ou simplesmente *dígrafo*, caracteriza-se por um conjunto $E$ composto por pares ordenados de vértices de $V$. Diferente dos grafos não direcionados, a relação de adjacência em um dígrafo implica que $(u, v) != (v, u)$, estabelecendo uma orientação específica para a conexão entre os nós.
+]
+#definição_digrafo
 
-Um *grafo dirigido*, ou simplesmente *dígrafo*, caracteriza-se por um conjunto $E$ composto por pares ordenados de vértices de $V$. Diferente dos grafos não direcionados, a relação de adjacência em um dígrafo implica que $(u, v) != (v, u)$, estabelecendo uma orientação específica para a conexão entre os nós.
+#let definição_grafo_ponderado=[
+  Um *grafo ponderado* é definido pela associação de uma função peso $w: E -> RR$, que atribui a cada aresta um valor escalar real. No contexto de tráfego, tal grandeza frequentemente representa o custo, a capacidade ou a "intensidade" da conexão entre dois pontos.
+]
 
-Adicionalmente, um *grafo ponderado* é definido pela associação de uma função peso $w: E -> RR$, que atribui a cada aresta um valor escalar real. No contexto de tráfego, tal grandeza frequentemente representa o custo, a capacidade ou a "intensidade" da conexão entre dois pontos.
-
-
-
-
+#definição_grafo_ponderado
 
 Neste trabalho, salvo indicação contrária, o termo "grafo" se refere a um grafo não direcionado e não ponderado. Quaisquer variações a essa definição padrão serão explicitamente detalhadas no decorrer do texto.
 

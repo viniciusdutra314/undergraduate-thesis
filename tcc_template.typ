@@ -1,3 +1,8 @@
+ #let titulo = "Otimização de redes complexas para o tráfego de pacotes por meio da adaptação da capacidade de transmissão dos seus elos"
+#let nome_aluno="Vinícius Sousa Dutra"
+#let orientador="Gonzalo Travieso"
+#let cidade="São Carlos"
+#let ano="2026"
 #let tcc_generate_cover(
   body
 ) = {
@@ -34,7 +39,7 @@
   )
   show figure: set par(leading: 0.35em)
 
-  let titulo = "Otimização de redes complexas para o tráfego de pacotes por meio da adaptação da capacidade de transmissão dos seus elos"
+ 
 
   assert(
     not titulo.ends-with("."), 
@@ -47,7 +52,7 @@
     INSTITUTO DE FÍSICA DE SÃO CARLOS
     ]]
     #v(1fr) 
-    #text(size:14pt)[VINÍCIUS SOUSA DUTRA]
+    #text(size:14pt)[#nome_aluno]
     #v(1fr)
     #text(size: 12pt)[#titulo]
     #v(1fr)
@@ -76,7 +81,7 @@
       #set par(justify: true, leading: 0.35em) 
         #text(size:12pt)[
         Trabalho de conclusão de curso apresentado ao Instituto de Física de São Carlos da Universidade de São Paulo para obtenção do título de Bacharel em Física Computacional.
-        Orientador: Prof. Dr. Gonzalo Travieso - Instituto de Física de São Carlos
+        Orientador: Prof. Dr. #orientador  - Instituto de Física de São Carlos
       ]
       
     ])
@@ -85,8 +90,8 @@
   v(4fr)
 
   align(center)[
-    São Carlos \
-    2026
+    #cidade \
+    #ano
   ]
   
   set page(
@@ -109,11 +114,5 @@
       }
     }
   )
-    
-  
-  
-  
-  
-
   body
 }
