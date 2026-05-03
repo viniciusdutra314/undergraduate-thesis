@@ -18,7 +18,7 @@
 
 
 #let resumo_conteudo=par[
-  #lorem(500)
+  #lorem(50)
 ]
 
 
@@ -59,7 +59,7 @@ O presente trabalho realiza simulações de tráfego em redes complexas, com o o
 == Tipos de grafos
 
 #let definição_grafo=[
-Embora existam variações terminológicas  na literatura, define-se um grafo $G$ como um par ordenado $G = (V, E)$, $V$ representa um conjunto finito e não vazio de elementos denominados *vértices*, enquanto $E$ consiste em um conjunto de pares não ordenados de elementos pertencentes a $V$, denominados *arestas* @trudeauIntroductionGraphTheory1993.
+Embora existam variações terminológicas  na literatura, define-se um grafo $G$ como um par ordenado $G = (V, E)$, onde $V$ representa um conjunto finito e não vazio de elementos denominados *vértices*, enquanto $E$ consiste em um conjunto de pares não ordenados de elementos pertencentes a $V$, denominados *arestas* @trudeauIntroductionGraphTheory1993.
 ]
 #definição_grafo
 
@@ -89,7 +89,7 @@ Um *caminho mínimo* entre dois vértices $s$ e $t$ é um caminho cujo comprimen
 
 A partir da definição de caminhos mínimos, derivam-se duas métricas topológicas fundamentais para a caracterização do modelo de tráfego. A primeira é a *distância média* $chevron.l L chevron.r$, que representa o valor esperado do comprimento do caminho mínimo entre dois vértices quaisquer da rede.
 
-$ chevron.l L chevron.r := 1 / (|V|(|V|-1)) sum_(i != j) d_(i j) $ <equacao:foda>
+$ chevron.l L chevron.r := 1 / (|V|(|V|-1)) sum_(i != j) d_(i j) $ 
 
 A segunda métrica é a *Centralidade de Intermediação de Aresta* (_Edge Betweenness Centrality_) @brandesVariantsShortestpathBetweenness2008a, que quantifica a frequência em que uma aresta é visitada por caminhos mínimos. A centralidade de intermediação da aresta $e$, denotada por $c_B (e)$, é definida como a soma das frações de todos os caminhos mínimos da rede que passam por essa aresta, normalizada pelo número de arestas possíveis:
 
@@ -124,7 +124,7 @@ Roteamento dinamicos
 Dada a elevada combinatória de dinâmicas em grafos de médio porte ($|V| approx 10^3$), o simulador foi desenvolvido na linguagem Rust visando assegurar a viabilidade computacional das simulações em hardware convencional. Esta escolha fundamenta-se na necessidade de conciliar o desempenho de uma linguagem compilada a garantias rigorosas de segurança de memória, concorrência sem condições de corrida e corretude dos resultados @jungRustBeltSecuringFoundations2017. A implementação atual permite a execução paralela de simulações em redes compostas por milhares de nós, utilizando a biblioteca de alto desempenho #text(style: "italic")[rustworkx_core]
 @treinishRustworkxHighPerformanceGraph2022 para a manipulação eficiente de algoritmos e estruturas de dados.
 
-Os gráficos e as análises do dados foi realizado na linguagem de alto nível Julia @bezansonJuliaFreshApproach2017 com o usado da biblioteca Makie
+Os gráficos e as análises dos dados foram realizadas na linguagem de alto nível Julia @bezansonJuliaFreshApproach2017 com o usado da biblioteca Makie
 @danischMakiejlFlexibleHighperformance2021, oferecendo um equilíbrio entre agilidade,exploração interativa e desempenho
 
 A verificação da corretude do simulador foi realizada por uma extensa
@@ -174,11 +174,11 @@ Desta forma, $delta$ atua como um *parâmetro de ordem*: valores próximos de ze
 
 Um desafio computacional intrínseco ao roteamento de caminhos mínimos sem viés reside na magnitude de $sigma_(s t)$, que frequentemente assume valores proibitivos para o armazenamento explícito de todos os caminhos possíveis #footnote[Como $sigma_(s t)$ pode atingir ordens de magnitude elevadas, há risco de *overflow* em tipos numéricos de tamanho fixo. O simulador desenvolvido utiliza a biblioteca *num-bigint*, que provê inteiros de precisão arbitrária.]. Para mitigar essa limitação, utiliza-se a estratégia de amostragem uniforme fundamentada em @dreyerOptimalUniformShortest2025. Tal método viabiliza a escolha aleatória de caminhos utilizando apenas a matriz de distâncias $d_(s t)$ e a matriz de contagem de caminhos mínimos $sigma_(s t)$.
 
-Para a implementação deste método, define-se o conjunto de *vértices predecessores* de um nó $v$ em relação a uma origem $s$. Um vértice $u$ é considerado predecessor de $v$ se for adjacente a $v$ e pertencer a pelo menos um caminho mínimo que parte de $s$ e chegue em $v$. Formalmente, o conjunto de predecessores é dado por $N^-(v) = {u in N(v) : d_(s u) = d_(s  v) - 1}$.
+Para a implementação deste método, define-se o conjunto de *vértices sucessores* de um nó $v$ em relação a um destino $t$. Um vértice $u$ é considerado predecessor de $v$ se for adjacente a $v$ e estar mais próximo de $t$. Formalmente, o conjunto de sucessores é dado por $N^-(v) = {u in N(v) : d_(u t) = d_(v t) - 1}$.
 
 #let original_graph=```
 graph {
-    0 [ ]
+    0 [color="red" ]
     1 [ ]
     2 [ ]
     3 [ ]
@@ -209,7 +209,7 @@ graph {
 #let graph_dag=```
 digraph {
     rankdir="BT"
-    0 [ label = 0]
+    0 [ label = 0,color="red"]
     1 [ label = 1]
     2 [ label = 1]
     3 [ label = 1]
@@ -241,14 +241,19 @@ digraph {
 
 #for i in range(n) {
   let letter = std.str.from-unicode(65 + i)
-  mapping.insert(str(i), letter)
+  if letter=="A"{
+    mapping.insert(str(i),"t")
+  }
+  else {
+   mapping.insert(str(i),lower(letter))
+   
+  }
 }
-
 
 #align(center)[
   #figure(
     box( 
-      width: 85%, 
+      width: 65%, 
       stroke: 0.5pt + gray.lighten(50%),
       fill: gray.lighten(98%),
       radius: 6pt,
@@ -261,42 +266,43 @@ digraph {
           #set align(center)
           #text(size: 10pt, weight: "bold", gray.darken(50%))[Grafo Original]
           #v(5pt)
-          #diagraph.render(original_graph, labels: mapping, height: 50%)
+          #diagraph.render(original_graph, labels: mapping, height: 35%)
         ],
         [
           #set align(center)
           #text(size: 10pt, weight: "bold", gray.darken(50%))[DAG de Caminhos Mínimos]
           #v(5pt)
-          #diagraph.render(graph_dag, labels: mapping, height: 50%)
+          #diagraph.render(graph_dag, labels: mapping, height: 35%)
         ]
       )
     ),
-    caption: [Comparação entre a topologia original e DAG .],
+    caption: [Comparação entre o grafo original e o DAG com raiz em $t$. Qualquer pacote com destino em $t$ terá probabilidades de transição dada pelo peso das arestas que conecta a seus vizinhos da DAG],
   )
 ]
 
-O método consiste em modelar o roteamento como uma cadeia de Markov com estado inicial em $t$ e estado terminal em $s$. Para um vértice $u$, a probabilidade de transição para um predecessor $v in N^-(u)$ é definida pelo peso:
+#v(30pt)
 
-$ P(u -> v) = sigma_(s v) / sigma_(s u) $
+O método consiste em modelar o roteamento como uma cadeia de Markov com estado inicial em um nó $s$ e estado terminal em $t$. Para um vértice $u$, a probabilidade de transição para um sucessor $v in N^-(u)$ é definida pelo peso:
 
-Demonstra-se que este conjunto de probabilidades resulta em uma seleção estritamente uniforme. Seja $p = (v_k, v_(k-1), dots, v_0)$ um caminho mínimo entre $t$ e $s$, com $v_k = t$ e $v_0 = s$. A probabilidade de selecionar este caminho específico $P(p)$ é o produtório das transições de cada salto:
+$ P(u -> v) = sigma_(v t) / sigma_(u t) $
 
-$ P(p) = product_(i=1)^(k) P(v_i -> v_(i-1)) = product_(i=1)^(k) sigma_(s v_(i-1)) / sigma_(s v_i) $
+Demonstra-se que este conjunto de probabilidades resulta em uma seleção estritamente uniforme. Seja $p = (v_0, v_1, dots,v_(k-1), v_k)$ um caminho mínimo entre $s$ e $t$, com $v_0 = s$ e $v_0 = t$. A probabilidade de selecionar este caminho específico $P(p)$ é o produtório das transições de cada salto:
 
-Ao expandir o produtório, observa-se um cancelamento telescópico:
+$ P(p) = product_(i=0)^(k) P(v_i -> v_(i+1)) = product_(i=0)^(k) sigma_(v_(i+1) t) / sigma_( v_i t) $
 
-$ P(p) = sigma_(s v_(k-1)) / sigma_(s v_k) dot sigma_(s v_(k-2)) / sigma_(s v_(k-1)) dot dots dot sigma_(s v_0) / sigma_(s v_1) = sigma_(s v_0) / sigma_(s v_k) $
+Ao expandir o produtório, observa-se um cancelamento telescópico e o resultado esperado:
 
-Considerando que $v_0 = s$, o caso base $sigma_(s s) = 1$ e $v_k = t$, obtém-se:
+$ P(p) = sigma_(v_(1)t) / sigma_(v_0 t) dot sigma_(v_(2) t) / sigma_(v_(1) t) dot dots dot sigma_(v_(k) t) / sigma_(v_(k-1) t) = sigma_( v_k t) / sigma_(v_0 t) = (sigma_(t t))/(sigma_(s t))=1/ (sigma_(s t)) $
 
-$ P(p) = 1 / sigma_(s t) $
+== Modelos de Grafo
 
-Visto que $P(p)$ é idêntica para qualquer caminho $p in cal(W)_(s t)$, a seleção é não enviesada. Em grafos não direcionados, $d_(s t)$ é obtida via busca em largura (BFS) em $O(|V|^2 + |V||E|)$. Paralelamente, $sigma_(s v)$ é calculada pela relação de recorrência:
+Diferentes algoritmos de geração de grafos servem como modelos de referência para a análise de redes complexas. Para fins de comparação e análise de desempenho em cenários de tráfego, foram selecionados os seguintes modelos:
 
-$ sigma_(s v) = cases(
-  1 & quad "se" v = s,
-  sum_(u in N^-(v)) sigma_(s u) & quad "se" v != s
-) $
+- *Erdős-Rényi $G(n, M)$:* Define-se como um grafo selecionado uniformemente a partir do conjunto de todos os grafos possíveis com $n$ vértices e $M$ arestas. Estudado originalmente por @erdosEvolutionRandomGraphs2011, este modelo serve como controle estatístico para testar a hipótese nula de que propriedades na rede decorrem de uma topologia específica ou se são meramente fruto de conexões aleatórias.
+
+- *Barabási-Albert $B A(n, m)$:* Caracteriza-se por um processo de crescimento dinâmico que incorpora o mecanismo de ligação preferencial. O algoritmo inicia-se com um grafo de $m_0$ nós e, a cada iteração, um novo nó é adicionado com $m$ arestas ($m <= m_0$). A probabilidade $Pi$ de que o novo nó se conecte a um nó $i$ existente é proporcional ao seu grau $k_i$, conforme a relação: 
+  $ Pi_i = k_i / (sum_j k_j) $
+  Este modelo, proposto por @barabasiEmergenceScalingRandom1999, reproduz a distribuição de grau em lei de potência observada em redes de infraestrutura e tráfego reais.
 
 
 

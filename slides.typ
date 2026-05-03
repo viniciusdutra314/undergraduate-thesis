@@ -8,26 +8,25 @@
     panic("O documento foi feito em Typst 0.14.2, talvez não funcione em outra versão")
   }
 }
-
+#set text(lang: "pt",region: "br")
 #show: slides.with(
   title: [#tcc_template.titulo],
   subtitle: "easy slides in typst",
   date: "01.07.2024",
-  authors: ("Author Name"),
+  authors: ([#tcc_template.nome_aluno].text),
   count:"number",
-  // Optional (for more see docs at https://mdwm.org/diatypst/)
   ratio: 16/9,
   layout: "medium",
   title-color: blue.darken(60%),
   toc: true,
 )
-#set text(lang: "pt",region: "br")
+
 
 
 = O que é um grafo?
 
 
-== O que é um grafo? 
+== Tipos de grafos
 
 
 / *Grafo*: #tcc.definição_grafo
@@ -48,7 +47,8 @@
 ]
 / *Digráfo*: #tcc.definição_digrafo
 
-#align(center)[
+#figure(
+  align(center)[
   #diagraph.render(```
   digraph ScientificPython {
     // Estética geral
@@ -62,21 +62,23 @@
     "Pandas" [fillcolor="#E70488", fontcolor=white];
     "Matplotlib" [fillcolor="#113137", fontcolor=white];
     "Scikit-Learn" [fillcolor="#F7941E"];
-
+    "Igraph"
     // Relações de Dependência
     "SciPy" -> "NumPy";
     "Pandas" -> "NumPy";
     "Matplotlib" -> "NumPy";
     "Scikit-Learn" -> "NumPy";
     "Scikit-Learn" -> "SciPy";
-    
+    "Código Python" -> "Igraph"
     // Aplicação final
     "Código Python" [shape=ellipse, fillcolor="#2ecc71"];
     "Código Python" -> "Scikit-Learn";
     "Código Python" -> "Pandas";
 }
-```.text,width:55%)
-]
+```.text,width:47%)
+],caption: [Dependências simplificadas de um código Python]
+  
+)
 
 / *Grafo Ponderado*: #tcc.definição_grafo_ponderado
 
