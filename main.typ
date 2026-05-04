@@ -304,8 +304,18 @@ Diferentes algoritmos de geração de grafos servem como modelos de referência 
   $ Pi_i = k_i / (sum_j k_j) $
   Este modelo, proposto por @barabasiEmergenceScalingRandom1999, reproduz a distribuição de grau em lei de potência observada em redes de infraestrutura e tráfego reais.
 
+== Algoritmo de garantia de conectividade 
 
 
+Em modelos de análise de tráfego, a conetividade do grafo é uma propriedade necessária, pois garante que uma mensagem originada em qualquer nó $s$ seja capaz de alcançar qualquer destino $t$. Contudo, diversos modelos de redes, como o grafo aleatório de Erdős-Rényi, não garantem a conectividade global em todos os seus regimes de parâmetros.
+
+Para transformar o grafo em conexo descaracterizando ao mínimo sua topologia original, aplica-se um procedimento heurístico de conexão de componentes via troca de arestas (_edge swap_). O algoritmo identifica as componentes conexas de $G$, ordenando-as por ordem decrescente de tamanho. Enquanto o grafo não for conexo, o algoritmo realiza a fusão entre a maior componente ($C_1$) e a segunda maior componente ($C_2$).
+
+O mecanismo de fusão fundamenta-se na seleção aleatória de arestas que apresentem redundância estrutural, ou seja, **arestas que não sejam pontes** (_bridges_). Uma aresta $(u, v)$ é uma ponte se sua remoção aumenta o número de componentes conectadas da rede, essas arestas podem ser encontradas usando o algoritmo de   @tarjanNoteFindingBridges1974. Ao selecionar uma aresta $(u, v) in E(C_1)$ e uma aresta $(x, y) in E(C_2)$ que pertençam a ciclos (não-pontes), garante-se que a remoção de ambas não fragmente as componentes originais antes da fusão.
+
+Essas arestas são removidas e substituídas pelas aresta $(u, x)$ e $(v, y)$. Esta operação de re-cabeamento (_rewiring_) é matematicamente interessante pois preserva a sequência de graus, ou seja, o grau de cada nó permanece inalterado.
+
+Nos casos excepcionais onde uma das componentes é uma árvore ou um vértice isolado, situações onde todas as arestas são obrigatoriamente pontes, a conectividade é estabelecida pela inserção direta de uma nova aresta.
 
 = RESULTADOS
 
