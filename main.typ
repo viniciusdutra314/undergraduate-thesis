@@ -322,8 +322,22 @@ Nos casos excepcionais onde uma das componentes é uma árvore ou um vértice is
 gráficos e discussões e mini conclusões
 
 
-= CONCLUSÕES E CONSIDERAÇÕES FINAIS
+#let p_critico_df= csv("results/p_critico/graph_stats.csv")
 
+
+#figure(
+  table(
+  columns: p_critico_df.first().len(),
+  table.header([*Grafo*],[*N*],[*E*],[*$chevron.l L chevron.r$*],[*C*]),
+   ..for (graph_name,n,e,l,c) in p_critico_df.slice(1) {
+    (graph_name,n,e,[#calc.round(float(l),digits:2)] ,[#calc.round(float(c),digits:3)] )
+  }
+  ),
+  caption: []  
+)
+
+= CONCLUSÕES E CONSIDERAÇÕES FINAIS
+ 
 #bibliography("zotero.bib",
 title:[REFERÊNCIAS],
 style: "associacao-brasileira-de-normas-tecnicas",full:false)
