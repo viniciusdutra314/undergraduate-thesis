@@ -2,6 +2,7 @@
 #import "@preview/algorithmic:1.0.7": *
 #import "@preview/wordometer:0.1.5":*
 #import "@preview/diagraph:0.3.7"
+#import "@preview/subpar:0.2.2"
 #{
   if sys.version!=version(0,14,2){
     panic("O documento foi feito em Typst 0.14.2, talvez não funcione em outra versão")
@@ -178,6 +179,14 @@ Para a implementação deste método, define-se o conjunto de *vértices sucesso
 
 #let original_graph=```
 graph {
+    graph [
+    pad=0.05, 
+    margin=0, 
+    nodesep=0.2, // Diminui espaço horizontal entre nós
+    ranksep=0.2, // Diminui espaço vertical entre níveis
+    overlap=false,
+    splines=true
+  ];
     0 [color="red" ]
     1 [ ]
     2 [ ]
@@ -208,6 +217,14 @@ graph {
 
 #let graph_dag=```
 digraph {
+    graph [
+      pad=0.05, 
+      margin=0, 
+      nodesep=0.2, // Diminui espaço horizontal entre nós
+      ranksep=0.2, // Diminui espaço vertical entre níveis
+      overlap=false,
+      splines=true
+    ];
     rankdir="BT"
     0 [ label = 0,color="red"]
     1 [ label = 1]
@@ -250,37 +267,31 @@ digraph {
   }
 }
 
+
 #align(center)[
+  #scale(80%)[
   #figure(
-    box( 
-      width: 65%, 
-      stroke: 0.5pt + gray.lighten(50%),
-      fill: gray.lighten(98%),
-      radius: 6pt,
-      inset: 15pt,
       grid(
         columns: (1fr, 1fr), 
-        gutter: 25pt,
+        stroke:gray,
+        fill:gray.lighten(90%),
+        inset:10pt,
         align: horizon, 
         [
-          #set align(center)
           #text(size: 10pt, weight: "bold", gray.darken(50%))[Grafo Original]
-          #v(5pt)
           #diagraph.render(original_graph, labels: mapping, height: 35%)
         ],
         [
-          #set align(center)
           #text(size: 10pt, weight: "bold", gray.darken(50%))[DAG de Caminhos Mínimos]
-          #v(5pt)
           #diagraph.render(graph_dag, labels: mapping, height: 35%)
         ]
-      )
-    ),
-    caption: [Comparação entre o grafo original e o DAG com raiz em $t$. Qualquer pacote com destino em $t$ terá probabilidades de transição dada pelo peso das arestas que conecta a seus vizinhos da DAG],
-  )
+      ),
+      caption: [Comparação entre o grafo original e o DAG com raiz em $t$. Qualquer pacote com destino em $t$ terá probabilidades de transição dada pelo peso das arestas que conecta a seus vizinhos da DAG]
+  )]
 ]
 
-#v(30pt)
+
+
 
 O método consiste em modelar o roteamento como uma cadeia de Markov com estado inicial em um nó $s$ e estado terminal em $t$. Para um vértice $u$, a probabilidade de transição para um sucessor $v in N^-(u)$ é definida pelo peso:
 
@@ -309,35 +320,57 @@ Diferentes algoritmos de geração de grafos servem como modelos de referência 
 
 Em modelos de análise de tráfego, a conetividade do grafo é uma propriedade necessária, pois garante que uma mensagem originada em qualquer nó $s$ seja capaz de alcançar qualquer destino $t$. Contudo, diversos modelos de redes, como o grafo aleatório de Erdős-Rényi, não garantem a conectividade global em todos os seus regimes de parâmetros.
 
-Para transformar o grafo em conexo descaracterizando ao mínimo sua topologia original, aplica-se um procedimento heurístico de conexão de componentes via troca de arestas (_edge swap_). O algoritmo identifica as componentes conexas de $G$, ordenando-as por ordem decrescente de tamanho. Enquanto o grafo não for conexo, o algoritmo realiza a fusão entre a maior componente ($C_1$) e a segunda maior componente ($C_2$).
+Para transformar o grafo em conexo descaracterizando ao mínimo sua topologia original, aplica-se um procedimento heurístico de conexão de componentes via troca de arestas (_edge swap_). O algoritmo identifica as componentes conexas de $G$, portanto, $union_i C_i = V$, enquanto o grafo não for conexo, o algoritmo realiza a fusão entre duas componentes escolhidas aleatoriamente $C_a$ e $C_b$
 
-O mecanismo de fusão fundamenta-se na seleção aleatória de arestas que apresentem redundância estrutural, ou seja, **arestas que não sejam pontes** (_bridges_). Uma aresta $(u, v)$ é uma ponte se sua remoção aumenta o número de componentes conectadas da rede, essas arestas podem ser encontradas usando o algoritmo de   @tarjanNoteFindingBridges1974. Ao selecionar uma aresta $(u, v) in E(C_1)$ e uma aresta $(x, y) in E(C_2)$ que pertençam a ciclos (não-pontes), garante-se que a remoção de ambas não fragmente as componentes originais antes da fusão.
+O mecanismo de fusão fundamenta-se na seleção aleatória de arestas que apresentem redundância estrutural, ou seja, *arestas que não sejam pontes* (_bridges_). Uma aresta $(u, v)$ é uma ponte se sua remoção aumenta o número de componentes conectadas da rede, essas arestas podem ser encontradas usando o algoritmo de   @tarjanNoteFindingBridges1974. Ao selecionar uma aresta $(u, v) in E(C_a)$ e uma aresta $(x, y) in E(C_b)$ que pertençam a ciclos (não-pontes), garante-se que a remoção de ambas não fragmente as componentes originais antes da fusão.
 
-Essas arestas são removidas e substituídas pelas aresta $(u, x)$ e $(v, y)$. Esta operação de re-cabeamento (_rewiring_) é matematicamente interessante pois preserva a sequência de graus, ou seja, o grau de cada nó permanece inalterado.
+Essas arestas são removidas e substituídas pelas aresta $(u, x)$ e $(v, y)$. Esta operação de re-cabeamento (_rewiring_) é matematicamente interessante pois preserva a sequência de graus, ou seja, o grau de cada nó permanece inalterado e conecta a componente $C_a$ com $C_b$.
 
-Nos casos excepcionais onde uma das componentes é uma árvore ou um vértice isolado, situações onde todas as arestas são obrigatoriamente pontes, a conectividade é estabelecida pela inserção direta de uma nova aresta.
+Nos casos excepcionais onde uma das componentes é uma árvore ou um vértice isolado, situações em que não existem arestas que não sejam pontes, a conectividade é estabelecida pela inserção direta de uma nova aresta.
 
 = RESULTADOS
 
 gráficos e discussões e mini conclusões
 
-
 #let p_critico_df= csv("results/p_critico/graph_stats.csv")
 
 
-#figure(
-  table(
-  columns: p_critico_df.first().len(),
-  table.header([*Grafo*],[*N*],[*E*],[*$chevron.l L chevron.r$*],[*C*]),
-   ..for (graph_name,n,e,l,c) in p_critico_df.slice(1) {
-    (graph_name,n,e,[#calc.round(float(l),digits:2)] ,[#calc.round(float(c),digits:3)] )
-  }
-  ),
-  caption: []  
+#let table_p_critico_df=table(
+     columns: (1.5fr, 1fr, 1fr, 1fr, 1fr), 
+    align: (left,center,center,center,center,center),
+    stroke:none,
+    fill: (x, y) => if y == 0 { aqua.lighten(50%) } else if calc.even(y) { gray.lighten(80%) } else { gray.lighten(95%) },
+    table.hline(stroke: 1pt),
+  table.header([*Grafo*],[*N*],[*E*],[*$<L>$*],[*C*]),
+  table.hline(stroke: 0.5pt),
+     ..for (graph_name,n,e,l,c) in p_critico_df.slice(1) {
+      (graph_name,n,e,[#calc.round(float(l),digits:2)] ,[#calc.round(float(c),digits:3)] )
+    },
+     table.hline(stroke: 1pt), 
+    )
+
+#subpar.grid(
+  figure(image("results/p_critico/p_critico_delay.svg"), caption: [Atraso médio ($delta$)]), <fig-atraso>,
+  figure(image("results/p_critico/p_critico_travel.svg"), caption: [Tempo médio de viagem]), <fig-viagem>,
+  columns: (1fr, 1fr),
+  gutter: 10pt,
+  grid.cell(colspan: 2, align(center, box(width:75%,table_p_critico_df))),
+  caption: [
+    Análise comparativa da dinâmica de tráfego em diferentes topologias de rede. 
+    A tabela apresenta as propriedades estruturais: número de nós ($N$), arestas ($E$), distância esperada ($⟨L⟩$) e coeficiente de agrupamento ($C$).
+  ],
+  label: <fig-completa>
 )
 
+
+
+
+
 = CONCLUSÕES E CONSIDERAÇÕES FINAIS
- 
+
+
+
+
 #bibliography("zotero.bib",
 title:[REFERÊNCIAS],
 style: "associacao-brasileira-de-normas-tecnicas",full:false)

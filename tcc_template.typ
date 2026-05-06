@@ -32,7 +32,7 @@
     lang: "pt",
     region: "br",
   )
-
+  show footnote: it => it //panic("Não deve haver notas de rodapé") 
   set par(
     justify: true,
     leading: 0.65em
