@@ -1,8 +1,23 @@
 #import "tcc_template.typ": tcc_generate_cover
-#import "@preview/algorithmic:1.0.7": *
 #import "@preview/wordometer:0.1.5":*
 #import "@preview/diagraph:0.3.7"
 #import "@preview/subpar:0.2.2"
+#import "@preview/zero:0.6.1": num,set-round,set-group
+
+#set-round(
+  mode:       "uncertainty",
+  precision:   1,
+  pad:        false,
+  direction:  "nearest",
+  ties:       "away-from-zero"
+)
+
+#set table(
+    stroke:none,
+    fill: (x, y) => if y == 0 { aqua.lighten(50%) } else if calc.even(y) { gray.lighten(80%) } else { gray.lighten(95%) },
+)
+
+
 #{
   if sys.version!=version(0,14,2){
     panic("O documento foi feito em Typst 0.14.2, talvez não funcione em outra versão")
@@ -19,7 +34,6 @@
 
 
 #let resumo_conteudo=par[
-  #lorem(50)
 ]
 
 
@@ -106,6 +120,7 @@ A definição de $c_B (e)$ foi escolhida com o fator de normalização para que 
 $ chevron.l L chevron.r = sum_(e in E) c_B (e) $
 
 
+
 Modelos de trafego
 
 tipos de otimização possíveis
@@ -133,7 +148,7 @@ A verificação da corretude do simulador foi realizada por uma extensa
 == Formalização do modelo de tráfego de pacotes <sec:formalização_modelo_trafego>
 
 Baseado na meta-análise de 
-@chenTrafficDynamicsComplex2012, utilize-se um modelo de trafego simples porém usual em artigos de trafego de pacotes, o sistema é descrito por um grafo e um conjunto de regras dinâmicas de geração e roteamento de informação.
+#cite(<chenTrafficDynamicsComplex2012>,form:"prose"), utilize-se um modelo de trafego simples porém usual em artigos de trafego de pacotes, o sistema é descrito por um grafo e um conjunto de regras dinâmicas de geração e roteamento de informação.
 
 
 Seja $G = (V, E)$ um grafo conexo, não direcionado, onde $V$ representa o conjunto de nós (roteadores/hosts) e $E$ o conjunto de arestas (links de comunicação). A dinâmica do sistema evolui em passos de tempo discretos conforme as seguintes regras:
@@ -153,7 +168,7 @@ Um resultado fundamental desse modelo é a existência de uma *taxa de geração
 
 + *Fase de Fluxo Livre* ($rho < rho_c$): Após um período transiente de estabilização, a rede atinge um _estado estacionário_. Nesse regime, a quantidade total de pacotes na rede oscila em torno de um valor médio constante
 
-+ $rho = rho_c$
+
 
 + *Fase de Congestionamento* ($rho > rho_c$): O sistema entra em um regime de saturação onde a taxa de geração de pacotes supera a capacidade de roteamento da rede. Isso resulta em um acúmulo linear de mensagens nas filas ao longo do tempo, caracterizando um estado não estacionário onde o tempo de espera e o atraso dos pacotes divergem para o infinito.
 
@@ -173,7 +188,7 @@ Desta forma, $delta$ atua como um *parâmetro de ordem*: valores próximos de ze
 
 == Seleção uniforme em $cal(W)_(s t)$
 
-Um desafio computacional intrínseco ao roteamento de caminhos mínimos sem viés reside na magnitude de $sigma_(s t)$, que frequentemente assume valores proibitivos para o armazenamento explícito de todos os caminhos possíveis #footnote[Como $sigma_(s t)$ pode atingir ordens de magnitude elevadas, há risco de *overflow* em tipos numéricos de tamanho fixo. O simulador desenvolvido utiliza a biblioteca *num-bigint*, que provê inteiros de precisão arbitrária.]. Para mitigar essa limitação, utiliza-se a estratégia de amostragem uniforme fundamentada em @dreyerOptimalUniformShortest2025. Tal método viabiliza a escolha aleatória de caminhos utilizando apenas a matriz de distâncias $d_(s t)$ e a matriz de contagem de caminhos mínimos $sigma_(s t)$.
+Um desafio computacional intrínseco ao roteamento de caminhos mínimos sem viés reside na magnitude de $sigma_(s t)$, que frequentemente assume valores proibitivos para o armazenamento explícito de todos os caminhos possíveis #footnote[Como $sigma_(s t)$ pode atingir ordens de magnitude elevadas, há risco de *overflow* em tipos numéricos de tamanho fixo. O simulador desenvolvido utiliza a biblioteca *num-bigint*, que provê inteiros de precisão arbitrária.]. Para mitigar essa limitação, utiliza-se a estratégia de amostragem uniforme fundamentada em #cite(<dreyerOptimalUniformShortest2025>,form: "prose"). Tal método viabiliza a escolha aleatória de caminhos utilizando apenas a matriz de distâncias $d_(s t)$ e a matriz de contagem de caminhos mínimos $sigma_(s t)$.
 
 Para a implementação deste método, define-se o conjunto de *vértices sucessores* de um nó $v$ em relação a um destino $t$. Um vértice $u$ é considerado predecessor de $v$ se for adjacente a $v$ e estar mais próximo de $t$. Formalmente, o conjunto de sucessores é dado por $N^-(v) = {u in N(v) : d_(u t) = d_(v t) - 1}$.
 
@@ -309,42 +324,84 @@ $ P(p) = sigma_(v_(1)t) / sigma_(v_0 t) dot sigma_(v_(2) t) / sigma_(v_(1) t) do
 
 Diferentes algoritmos de geração de grafos servem como modelos de referência para a análise de redes complexas. Para fins de comparação e análise de desempenho em cenários de tráfego, foram selecionados os seguintes modelos:
 
-- *Erdős-Rényi $G(n, M)$:* Define-se como um grafo selecionado uniformemente a partir do conjunto de todos os grafos possíveis com $n$ vértices e $M$ arestas. Estudado originalmente por @erdosEvolutionRandomGraphs2011, este modelo serve como controle estatístico para testar a hipótese nula de que propriedades na rede decorrem de uma topologia específica ou se são meramente fruto de conexões aleatórias.
+- *Erdős-Rényi $G(n, M)$:* Define-se como um grafo selecionado uniformemente a partir do conjunto de todos os grafos possíveis com $n$ vértices e $M$ arestas. Estudado originalmente por #cite(<erdosEvolutionRandomGraphs2011>,form:"prose"), este modelo serve como controle estatístico para testar a hipótese nula de que propriedades na rede decorrem de uma topologia específica ou se são meramente fruto de conexões aleatórias.
 
 - *Barabási-Albert $B A(n, m)$:* Caracteriza-se por um processo de crescimento dinâmico que incorpora o mecanismo de ligação preferencial. O algoritmo inicia-se com um grafo de $m_0$ nós e, a cada iteração, um novo nó é adicionado com $m$ arestas ($m <= m_0$). A probabilidade $Pi$ de que o novo nó se conecte a um nó $i$ existente é proporcional ao seu grau $k_i$, conforme a relação: 
   $ Pi_i = k_i / (sum_j k_j) $
-  Este modelo, proposto por @barabasiEmergenceScalingRandom1999, reproduz a distribuição de grau em lei de potência observada em redes de infraestrutura e tráfego reais.
+  Este modelo, proposto por #cite(<barabasiEmergenceScalingRandom1999>,form:"prose") reproduz a distribuição de grau em lei de potência observada em redes de infraestrutura e tráfego reais.
 
-== Algoritmo de garantia de conectividade 
-
+- *Watts–Strogatz $W S(n, K, beta)$*: Modelo proposto por #cite(<wattsCollectiveDynamicsSmallworld1998>,form:"prose") para modelar o fenômeno de "mundo pequeno" em que redes exibem simultaneamente alto coeficiente de agrupamento e distâncias médias pequenas. O modelo inicia com um grafo regular onde cada nó está conectado aos seus $K$ vizinhos mais próximos, cada aresta é então rearranjada com probabilidade $beta$ para um nó escolhido aleatoriamente. 
+- *Grafo Geométrico Aleatório $G G A(n, r)$*: Neste modelo, os $n$ nós são distribuídos aleatoriamente em um espaço euclidiano,  uma aresta é estabelecida entre dois nós se, e somente se, a distância euclidiana entre eles for inferior a um raio de corte $r$. 
+== Algoritmo de garantia de conectividade <section:procedimento_conectividade>
 
 Em modelos de análise de tráfego, a conetividade do grafo é uma propriedade necessária, pois garante que uma mensagem originada em qualquer nó $s$ seja capaz de alcançar qualquer destino $t$. Contudo, diversos modelos de redes, como o grafo aleatório de Erdős-Rényi, não garantem a conectividade global em todos os seus regimes de parâmetros.
 
 Para transformar o grafo em conexo descaracterizando ao mínimo sua topologia original, aplica-se um procedimento heurístico de conexão de componentes via troca de arestas (_edge swap_). O algoritmo identifica as componentes conexas de $G$, portanto, $union_i C_i = V$, enquanto o grafo não for conexo, o algoritmo realiza a fusão entre duas componentes escolhidas aleatoriamente $C_a$ e $C_b$
 
-O mecanismo de fusão fundamenta-se na seleção aleatória de arestas que apresentem redundância estrutural, ou seja, *arestas que não sejam pontes* (_bridges_). Uma aresta $(u, v)$ é uma ponte se sua remoção aumenta o número de componentes conectadas da rede, essas arestas podem ser encontradas usando o algoritmo de   @tarjanNoteFindingBridges1974. Ao selecionar uma aresta $(u, v) in E(C_a)$ e uma aresta $(x, y) in E(C_b)$ que pertençam a ciclos (não-pontes), garante-se que a remoção de ambas não fragmente as componentes originais antes da fusão.
+O mecanismo de fusão fundamenta-se na seleção aleatória de arestas que apresentem redundância estrutural, ou seja, *arestas que não sejam pontes* (_bridges_). Uma aresta $(u, v)$ é uma ponte se sua remoção aumenta o número de componentes conectadas da rede, essas arestas podem ser encontradas usando o algoritmo de   #cite(<tarjanNoteFindingBridges1974>,form: "prose"). Ao selecionar uma aresta $(u, v) in E(C_a)$ e uma aresta $(x, y) in E(C_b)$ que pertençam a ciclos (não-pontes), garante-se que a remoção de ambas não fragmente as componentes originais antes da fusão.
 
 Essas arestas são removidas e substituídas pelas aresta $(u, x)$ e $(v, y)$. Esta operação de re-cabeamento (_rewiring_) é matematicamente interessante pois preserva a sequência de graus, ou seja, o grau de cada nó permanece inalterado e conecta a componente $C_a$ com $C_b$.
 
 Nos casos excepcionais onde uma das componentes é uma árvore ou um vértice isolado, situações em que não existem arestas que não sejam pontes, a conectividade é estabelecida pela inserção direta de uma nova aresta.
 
+== Adaptação da capacidade dos elos
+Assume-se que o sistema opera em um *regime não crítico*, isto é, a taxa de geração de mensagens É suficientemente baixa para evitar o congestionamento, permitindo que a rede atinja um equilíbrio estatístico. No estado de equilíbrio, associa-se a cada aresta $e in E$ uma função densidade de probabilidade, denotada por $f_e$, que representa a distribuição do número de mensagens na fila em um instante qualquer.
+
+Define-se a *Taxa de Fluxo Livre*, ou do inglês _Free Flow Rate_ (FFR) de uma aresta como a proporção de tempo em que o número de mensagens enfileiradas não excede a capacidade da aresta, ou seja, a fração do tempo em que as mensagens não sofrem atraso na sua entrega. Formalmente, para uma aresta $e$, a FFR é dada por:
+
+$ "FFR"_e = P(X_e <= C_e) = F_e (C_e) $
+
+onde $X_e$ é a variável aleatória do tamanho da fila, $C_e$ é a capacidade da aresta e $F_e$ é a função de distribuição acumulada que é calculada a partir da $f_e$.
+
+Dado uma taxa mínima desejado para o fluxo livre, denotado por $eta$, uma questão de otimização é determinar uma configuração de capacidades $\{C_e : e in E\}$ tal que:
+
+- Toda aresta satisfaça $F_e (C_e) >= eta$.
+- A capacidade total do sistema, dada por $sum_{e in E} C_e$, seja minimizada.
+
+Um algoritmo local heurístico que até o conhecimento do autor é inovador,é descrito logo em seguida.
+
+Dado um intervalo de tempo $Delta T$ suficientemente longo para o sistema atingir o equilíbrio. Para cada aresta calcula-se nesse intervalo de tempo o histograma de número de mensagens recebidos, a partir desse histograma é atualizada a capacidade tal forma a ser a mínima capacidade necessária para atingir a FFR desejada durante o intervalo $Delta T$:
+
+$ C_e = min {C in ZZ^+ : F_e (C) >= eta}, quad forall e in E. $ <eq:metodo>
+
+Este procedimento atua como uma *heurística*, visto que a alteração da capacidade de uma única aresta pode influenciar a distribuição de tráfego em toda a rede. No entanto, ao aplicar iterativamente a @eq:metodo e permitir que o sistema se estabilize novamente em intervalos sucessivos $Delta T$, observa-se empiricamente a convergência para uma configuração estável que satisfaz a restrição de FFR enquanto tem uma capacidade total não muito grande.
+
+Uma das vantagens desse método é por ele ser local, cada aresta só precisa de informação do seu próprio trafego observado, o que é uma características que torna a heurística escalável para redes de virtualmente qualquer tamanho
+
 = RESULTADOS
 
-gráficos e discussões e mini conclusões
+Todos os grafos comparados foram gerados com parâmetros de forma a não diferirem em mais do que 1% no número de nós e de arestas, a conectividade foi garantido pelo procedimento descrito na @section:procedimento_conectividade, isso estabelece uma comparação justa em um cenário que se queira uma rede eficiente dado $N$ nós e $M$ conexões entre eles 
+
+== Sem adaptação
+
+
+A @fig:rho_vs_atraso compara a eficiência dos 4 modelos de grafos escolhidos para a análise, a aferição exata do valor de $p_c$ pra cada grafo é difícil de ser feita pois os atrasos progressivamente vão aumentando sem demonstrar uma clara transição de fase, no entanto, visualmente é possível afirmar que:
+
+#{
+  set text(size: 11.5pt)
+$ p_c ("Erdős–Rényi")>p_c ("Watts–Strogatz")>p_c ("Barabási–Albert")>p_c ("Rede Geométrica") $
+}
+
 
 #let p_critico_df= csv("results/p_critico/graph_stats.csv")
-
+#let topology_to_color=(
+  "Barabási–Albert": red, 
+  "Erdős–Rényi" : blue, 
+  "Rede Geométrica" :olive, 
+  "Watts–Strogatz" :purple)
+  
+#let round_num(x,digits)={
+  [#calc.round(float(x),digits:digits)]
+}
 
 #let table_p_critico_df=table(
-     columns: (1.5fr, 1fr, 1fr, 1fr, 1fr), 
-    align: (left,center,center,center,center,center),
-    stroke:none,
-    fill: (x, y) => if y == 0 { aqua.lighten(50%) } else if calc.even(y) { gray.lighten(80%) } else { gray.lighten(95%) },
+     columns: (1.5fr, 1fr, 1fr, 1fr, 1fr,1fr), 
+    align: (left,center,center,center,center,center,center),
     table.hline(stroke: 1pt),
-  table.header([*Grafo*],[*N*],[*E*],[*$<L>$*],[*C*]),
+  table.header([*Grafo*],[*$N$*],[*$E$*],[*$d$*],[*$chevron.l L chevron.r$*],[*$C$*]),
   table.hline(stroke: 0.5pt),
-     ..for (graph_name,n,e,l,c) in p_critico_df.slice(1) {
-      (graph_name,n,e,[#calc.round(float(l),digits:2)] ,[#calc.round(float(c),digits:3)] )
+     ..for (graph_name,_,n,e,d,l,c) in  p_critico_df.slice(1) {
+      (text(fill:topology_to_color.at(graph_name),stroke:0.005em)[#graph_name],n,e,d,round_num(l,2),round_num(c,3))
     },
      table.hline(stroke: 1pt), 
     )
@@ -354,13 +411,45 @@ gráficos e discussões e mini conclusões
   figure(image("results/p_critico/p_critico_travel.svg"), caption: [Tempo médio de viagem]), <fig-viagem>,
   columns: (1fr, 1fr),
   gutter: 10pt,
-  grid.cell(colspan: 2, align(center, box(width:75%,table_p_critico_df))),
+  grid.cell(colspan: 2, align(center, box(width:80%,table_p_critico_df))),
   caption: [
     Análise comparativa da dinâmica de tráfego em diferentes topologias de rede. 
-    A tabela apresenta as propriedades estruturais: número de nós ($N$), arestas ($E$), distância esperada ($⟨L⟩$) e coeficiente de agrupamento ($C$).
+    A tabela apresenta as propriedades estruturais: número de nós $N$, arestas $E$, diâmetro ($d$), distância esperada $chevron.l L chevron.r$ e coeficiente de agrupamento $C$.
   ],
-  label: <fig-completa>
+  label: <fig:rho_vs_atraso>
 )
+
+A distância média da rede é um fator  importante na sua eficiência, no regime de baixa geração de mensagens $p_c approx 0$, mesmo que o atraso seja próximo de nulo para todos os grafos
+, o tempo médio de viagem dos pacotes é numericamente igual a $chevron.l L chevron.r$ 
+#let betweeness_vs_messages=csv("results/p_critico/betweeness_vs_messages.csv")
+
+
+  #let table_betweeness_vs_messages=table(
+     columns: (1fr, 0.3fr, 1fr, 1fr), 
+    align: (left,center,center,center),
+    table.hline(stroke: 1pt),
+  table.header([*Grafo*],[*$R^2$*],[*$alpha plus.minus Delta alpha $*],[*$beta plus.minus Delta beta $*]),
+  table.hline(stroke: 0.5pt),
+     ..for (graph_name, R_squared, alpha,delta_alpha, beta, delta_beta) in  betweeness_vs_messages.slice(1) {
+      (text(fill:topology_to_color.at(graph_name),stroke:0.005em)[#graph_name],
+      round_num(R_squared,2),
+      num(alpha + "+-" + delta_alpha,exponent:"sci",),
+      num(beta + "+-" + delta_beta,exponent:"sci")
+    )
+    },
+     table.hline(stroke: 1pt), 
+    )
+
+
+#figure(
+  stack(
+    dir: ttb,
+    spacing: 1.5em,
+    image("results/p_critico/p_critico_betweeness.svg", width: 80%),
+    box(width: 85%)[#table_betweeness_vs_messages]
+  ),
+  caption: [Análise da correlação entre centralidade de aresta e mensagens recebidas, $rho$ fixo em 0.1],
+) <fig-centralidade>
 
 
 
