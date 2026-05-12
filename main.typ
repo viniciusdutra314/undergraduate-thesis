@@ -383,7 +383,7 @@ $ p_c ("Erdős–Rényi")>p_c ("Watts–Strogatz")>p_c ("Barabási–Albert")>p_
 }
 
 
-#let p_critico_df= csv("results/p_critico/graph_stats.csv")
+#let p_critico_df= csv("results/p_critico/graph_stats-acef41d1806f1564654164a48b167c015864f33b.csv")
 #let topology_to_color=(
   "Barabási–Albert": red, 
   "Erdős–Rényi" : blue, 
@@ -407,8 +407,8 @@ $ p_c ("Erdős–Rényi")>p_c ("Watts–Strogatz")>p_c ("Barabási–Albert")>p_
     )
 
 #subpar.grid(
-  figure(image("results/p_critico/p_critico_delay.svg"), caption: [Atraso médio ($delta$)]), <fig-atraso>,
-  figure(image("results/p_critico/p_critico_travel.svg"), caption: [Tempo médio de viagem]), <fig-viagem>,
+  figure(image("results/p_critico/p_critico_delay-acef41d1806f1564654164a48b167c015864f33b.svg"), caption: [Atraso médio ($delta$)]), <fig-atraso>,
+  figure(image("results/p_critico/p_critico_travel-acef41d1806f1564654164a48b167c015864f33b.svg"), caption: [Tempo médio de viagem]), <fig-viagem>,
   columns: (1fr, 1fr),
   gutter: 10pt,
   grid.cell(colspan: 2, align(center, box(width:80%,table_p_critico_df))),
@@ -421,7 +421,16 @@ $ p_c ("Erdős–Rényi")>p_c ("Watts–Strogatz")>p_c ("Barabási–Albert")>p_
 
 A distância média da rede é um fator  importante na sua eficiência, no regime de baixa geração de mensagens $p_c approx 0$, mesmo que o atraso seja próximo de nulo para todos os grafos
 , o tempo médio de viagem dos pacotes é numericamente igual a $chevron.l L chevron.r$ 
-#let betweeness_vs_messages=csv("results/p_critico/betweeness_vs_messages.csv")
+
+Um modelo de grafo que podemos variar a distância média fixando $N$ e $M$ é o modelo de Watts-Strogatz, com $beta approx 0$ (grafo regular) a distância é alta e é proporcional a $N$, já em $beta approx 1$ o modelo se aproxima de um grafo aleatório tendo $chevron.l L chevron.r$ baixo, para valores intermediários $0<beta<1$ é possível atingir redes de "mundo pequeno" em que $chevron.l L chevron.r$ é pequeno mais que $C$ é alto
+
+#figure(
+  image("results/watts_strogatz_beta_vs_l_and_c/watts_strogatz_beta_vs_l_and_c-11189546e3c606329c7413d3392776c97ccb9e10.svg",width:70%),
+  caption: [Modelo de Watts-Strogatz $W S(3000, 6, beta)$ em gráfico análogo ao artigo original @wattsCollectiveDynamicsSmallworld1998, demonstrando a possibilidade de gerar grafos aleatórios com diferentes valores de $chevron.l L chevron.r$]
+  
+)
+
+#let betweeness_vs_messages=csv("results/p_critico/betweeness_vs_messages-acef41d1806f1564654164a48b167c015864f33b.csv")
 
 
   #let table_betweeness_vs_messages=table(
@@ -445,7 +454,7 @@ A distância média da rede é um fator  importante na sua eficiência, no regim
   stack(
     dir: ttb,
     spacing: 1.5em,
-    image("results/p_critico/p_critico_betweeness.svg", width: 80%),
+    image("results/p_critico/p_critico_betweeness-acef41d1806f1564654164a48b167c015864f33b.svg", width: 80%),
     box(width: 85%)[#table_betweeness_vs_messages]
   ),
   caption: [Análise da correlação entre centralidade de aresta e mensagens recebidas, $rho$ fixo em 0.1],
