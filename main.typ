@@ -14,7 +14,7 @@
 
 #set table(
     stroke:none,
-    fill: (x, y) => if y == 0 { aqua.lighten(50%) } else if calc.even(y) { gray.lighten(80%) } else { gray.lighten(95%) },
+    fill: (x, y) => if y == 0 { aqua.lighten(50%) } else if calc.even(y) { gray.lighten(70%) } else { gray.lighten(95%) },
 )
 
 
@@ -64,9 +64,9 @@ A análise de redes complexas viabiliza a modelagem de sistemas heterogêneos so
 O presente trabalho realiza simulações de tráfego em redes complexas, com o objetivo de investigar e propor estratégias de otimização no fluxo de pacotes para diversas topologias e protocolos de roteamento. Essa otimização é feita por meio da modificação da capacidade de transmissão dos elos da rede, com o intuito de maximizar a taxa crítica de geração de pacotes ($rho_c$) e minimizar o atraso dos pacotes.
 
 - *Simulador:* Implementar e validar um simulador de tráfego de pacotes de alto desempenho, capaz de modelar o envio de mensagens, filas de espera e diferentes estratégias de roteamento em grafos de média escala.
-- *Alocação de Capacidade:* Propor e testar heurísticas para a distribuição não uniforme das capacidades de transmissão ($C$) entre as arestas, visando a minimização da  capacidade total da rede, avaliando como essa adaptação afeta o Atraso Médio ($delta$) e a geração crítica de mensagens $(p_c)$.
+- *Alocação de Capacidade:* Propor e testar heurísticas para a distribuição não uniforme das capacidades de transmissão ($C$) entre as arestas, visando a minimização da  capacidade total da rede, avaliando como essa adaptação afeta o Atraso Médio ($delta$) e a geração crítica de mensagens $(rho_c)$.
 - *Avaliação de Estratégias de Roteamento:* Comparar a eficiência das adaptações de capacidade propostas quando submetidas a diferentes algoritmos de roteamento, como Caminho Mínimo (_Shortest Path_) e estratégias de Visibilidade Limitada.
-- *Análise Topológica:* Investigar a relação entre métricas topológicas, como a Centralidade de Intermediação de Aresta ($c_B(e)$)  e o tráfego resultante em diferentes redes como Erdos-Rényi, Barabási-Albert, redes em grade, etc.
+- *Análise Topológica:* Investigar a relação entre métricas topológicas, como a Centralidade de Intermediação de Aresta ($b_e$)  e o tráfego resultante em diferentes redes como Erdos-Rényi, Barabási-Albert, redes em grade, etc.
 
 
 = Tráfego de pacotes em redes complexas
@@ -106,18 +106,18 @@ A partir da definição de caminhos mínimos, derivam-se duas métricas topológ
 
 $ chevron.l L chevron.r := 1 / (|V|(|V|-1)) sum_(i != j) d_(i j) $ 
 
-A segunda métrica é a *Centralidade de Intermediação de Aresta* (_Edge Betweenness Centrality_) @brandesVariantsShortestpathBetweenness2008a, que quantifica a frequência em que uma aresta é visitada por caminhos mínimos. A centralidade de intermediação da aresta $e$, denotada por $c_B (e)$, é definida como a soma das frações de todos os caminhos mínimos da rede que passam por essa aresta, normalizada pelo número de arestas possíveis:
+A segunda métrica é a *Centralidade de Intermediação de Aresta* (_Edge Betweenness Centrality_) @brandesVariantsShortestpathBetweenness2008a, que quantifica a frequência em que uma aresta é visitada por caminhos mínimos. A centralidade de intermediação da aresta $e$, denotada por $b_e$, é definida como a soma das frações de todos os caminhos mínimos da rede que passam por essa aresta, normalizada pelo número de arestas possíveis:
 
-$ c_B(e) =  1 / (|V|(|V|-1)) sum_(s, t in V) (sigma(s, t | e)) / (sigma(s, t)) $
+$ b_e =  1 / (|V|(|V|-1)) sum_(s, t in V) (sigma(s, t | e)) / (sigma(s, t)) $
 
 Seja $cal(W)_(s t)$ o conjunto de todos os caminhos mínimos de um vértice origem $s$ até um destino $t$. Definimos o escalar $sigma(s, t) := |cal(W)_(s t)|$ como a cardinalidade deste conjunto, isto é, o número total de caminhos mínimos possíveis entre $s$ e $t$. Para uma dada aresta $e in E$, denotamos por $sigma(s, t | e)$ a quantidade desses caminhos mínimos que passam  por $e$.
 
 
 
-A definição de $c_B (e)$ foi escolhida com o fator de normalização para que uma relação ficasse mais simples, conforme demonstrado por @brandesMaintainingDualityCloseness2016, a soma das centralidades de intermediação de todas as arestas de um grafo é igual a distância média. Esse resultado é importante para analisar como a topologia da rede influencia o tráfego de pacotes
+A definição de $b_e$ foi escolhida com o fator de normalização para que uma relação ficasse mais simples, conforme demonstrado por @brandesMaintainingDualityCloseness2016, a soma das centralidades de intermediação de todas as arestas de um grafo é igual a distância média. Esse resultado é importante para analisar como a topologia da rede influencia o tráfego de pacotes
 
 
-$ chevron.l L chevron.r = sum_(e in E) c_B (e) $
+$ chevron.l L chevron.r = sum_(e in E) b_e $ <eq:sum_edge_betweeness>
 
 
 
@@ -186,7 +186,7 @@ Nesta formulação:
 Desta forma, $delta$ atua como um *parâmetro de ordem*: valores próximos de zero indicam um regime de *fluxo livre*, enquanto uma divergência em $delta$ sinaliza a fase de *congestionamento* da rede, onde o tempo de espera nas filas domina a dinâmica do sistema.
 
 
-== Seleção uniforme em $cal(W)_(s t)$
+== Seleção uniforme em $cal(W)_(s t)$ <sec:seleção_uniforme_w>
 
 Um desafio computacional intrínseco ao roteamento de caminhos mínimos sem viés reside na magnitude de $sigma_(s t)$, que frequentemente assume valores proibitivos para o armazenamento explícito de todos os caminhos possíveis #footnote[Como $sigma_(s t)$ pode atingir ordens de magnitude elevadas, há risco de *overflow* em tipos numéricos de tamanho fixo. O simulador desenvolvido utiliza a biblioteca *num-bigint*, que provê inteiros de precisão arbitrária.]. Para mitigar essa limitação, utiliza-se a estratégia de amostragem uniforme fundamentada em #cite(<dreyerOptimalUniformShortest2025>,form: "prose"). Tal método viabiliza a escolha aleatória de caminhos utilizando apenas a matriz de distâncias $d_(s t)$ e a matriz de contagem de caminhos mínimos $sigma_(s t)$.
 
@@ -320,11 +320,15 @@ Ao expandir o produtório, observa-se um cancelamento telescópico e o resultado
 
 $ P(p) = sigma_(v_(1)t) / sigma_(v_0 t) dot sigma_(v_(2) t) / sigma_(v_(1) t) dot dots dot sigma_(v_(k) t) / sigma_(v_(k-1) t) = sigma_( v_k t) / sigma_(v_0 t) = (sigma_(t t))/(sigma_(s t))=1/ (sigma_(s t)) $
 
+== Centralidade de intermediação e número de mensagens
+
+
+
 == Modelos de Grafo
 
 Diferentes algoritmos de geração de grafos servem como modelos de referência para a análise de redes complexas. Para fins de comparação e análise de desempenho em cenários de tráfego, foram selecionados os seguintes modelos:
 
-- *Erdős-Rényi $G(n, M)$:* Define-se como um grafo selecionado uniformemente a partir do conjunto de todos os grafos possíveis com $n$ vértices e $M$ arestas. Estudado originalmente por #cite(<erdosEvolutionRandomGraphs2011>,form:"prose"), este modelo serve como controle estatístico para testar a hipótese nula de que propriedades na rede decorrem de uma topologia específica ou se são meramente fruto de conexões aleatórias.
+- *Erdős-Rényi $G(N, E)$:* Define-se como um grafo selecionado uniformemente a partir do conjunto de todos os grafos possíveis com $N$ vértices e $$ arestas. Estudado originalmente por #cite(<erdosEvolutionRandomGraphs2011>,form:"prose"), este modelo serve como controle estatístico para testar a hipótese nula de que propriedades na rede decorrem de uma topologia específica ou se são meramente fruto de conexões aleatórias.
 
 - *Barabási-Albert $B A(n, m)$:* Caracteriza-se por um processo de crescimento dinâmico que incorpora o mecanismo de ligação preferencial. O algoritmo inicia-se com um grafo de $m_0$ nós e, a cada iteração, um novo nó é adicionado com $m$ arestas ($m <= m_0$). A probabilidade $Pi$ de que o novo nó se conecte a um nó $i$ existente é proporcional ao seu grau $k_i$, conforme a relação: 
   $ Pi_i = k_i / (sum_j k_j) $
@@ -422,28 +426,24 @@ $ p_c ("Erdős–Rényi")>p_c ("Watts–Strogatz")>p_c ("Barabási–Albert")>p_
 A distância média da rede é um fator  importante na sua eficiência, no regime de baixa geração de mensagens $p_c approx 0$, mesmo que o atraso seja próximo de nulo para todos os grafos
 , o tempo médio de viagem dos pacotes é numericamente igual a $chevron.l L chevron.r$ 
 
-Um modelo de grafo que podemos variar a distância média fixando $N$ e $M$ é o modelo de Watts-Strogatz, com $beta approx 0$ (grafo regular) a distância é alta e é proporcional a $N$, já em $beta approx 1$ o modelo se aproxima de um grafo aleatório tendo $chevron.l L chevron.r$ baixo, para valores intermediários $0<beta<1$ é possível atingir redes de "mundo pequeno" em que $chevron.l L chevron.r$ é pequeno mais que $C$ é alto
+Para um roteamento de mínimos caminhos, uma forma simples de prever quantas mensagens passam por uma aresta, é através da sua intermediação, como ilustra a @fig:intermediação_vs_mensagens existe uma relação linear entra ela e o número de mensagens, isso acontece pois a centralidade de intermediação mede a quantidade de mínimos caminhos que passam pela aresta, como o roteamento é por mínimos caminhos, essa grandeza mede diretamente o quanto é esperado de tráfego.
 
-#figure(
-  image("results/watts_strogatz_beta_vs_l_and_c/watts_strogatz_beta_vs_l_and_c-11189546e3c606329c7413d3392776c97ccb9e10.svg",width:70%),
-  caption: [Modelo de Watts-Strogatz $W S(3000, 6, beta)$ em gráfico análogo ao artigo original @wattsCollectiveDynamicsSmallworld1998, demonstrando a possibilidade de gerar grafos aleatórios com diferentes valores de $chevron.l L chevron.r$]
-  
-)
+$ chevron.l M_e chevron.r ≃ sum_(s,t in V) underbrace((rho N)/(N(N-1)),#stack(dir: ttb, [Fração das mensagens geradas], [ com origem em $s$ e destino $t$])) times underbrace(sigma(s,t | e)/(sigma(s,t)),#stack(dir:ttb,[Fração dos caminhos mínimos ],[que passam por $e$]))=N rho b_e $
+
 
 #let betweeness_vs_messages=csv("results/p_critico/betweeness_vs_messages-acef41d1806f1564654164a48b167c015864f33b.csv")
 
 
   #let table_betweeness_vs_messages=table(
-     columns: (1fr, 0.3fr, 1fr, 1fr), 
+     columns: (1fr, 1fr, 1.5fr), 
     align: (left,center,center,center),
     table.hline(stroke: 1pt),
-  table.header([*Grafo*],[*$R^2$*],[*$alpha plus.minus Delta alpha $*],[*$beta plus.minus Delta beta $*]),
+  table.header([*Grafo*],[*$R^2$*],[*$alpha plus.minus Delta alpha $*]),
   table.hline(stroke: 0.5pt),
-     ..for (graph_name, R_squared, alpha,delta_alpha, beta, delta_beta) in  betweeness_vs_messages.slice(1) {
+     ..for (graph_name, R_squared, alpha,delta_alpha) in  betweeness_vs_messages.slice(1) {
       (text(fill:topology_to_color.at(graph_name),stroke:0.005em)[#graph_name],
       round_num(R_squared,2),
       num(alpha + "+-" + delta_alpha,exponent:"sci",),
-      num(beta + "+-" + delta_beta,exponent:"sci")
     )
     },
      table.hline(stroke: 1pt), 
@@ -455,10 +455,27 @@ Um modelo de grafo que podemos variar a distância média fixando $N$ e $M$ é o
     dir: ttb,
     spacing: 1.5em,
     image("results/p_critico/p_critico_betweeness-acef41d1806f1564654164a48b167c015864f33b.svg", width: 80%),
-    box(width: 85%)[#table_betweeness_vs_messages]
+    box(width: 65%)[#table_betweeness_vs_messages]
   ),
-  caption: [Análise da correlação entre centralidade de aresta e mensagens recebidas, $rho$ fixo em 0.1],
-) <fig-centralidade>
+  caption: [Análise da correlação entre centralidade de intermediação de aresta e mensagens recebidas, $rho$ fixo em 0.1],
+) <fig:intermediação_vs_mensagens>
+
+
+
+Como a geração de mensagens é um conjunto de ensaios de Bernoulli para cada vértice, o número total de mensagens gerados segue uma distribuição binominal, o que implica em uma variança ($N rho(1-rho)$) no número de mensagens gerados por iteração 
+
+Através dessa aproximação e utilizando a @eq:sum_edge_betweeness, chegamos em uma expressão da quantidade de mensagens que transitam na rede
+$ sum_(e in E) chevron.l M_e chevron.r = N rho chevron.l L chevron.r  $
+
+
+
+
+Um modelo de grafo que podemos variar a distância média fixando $N$ e $M$ é o modelo de Watts-Strogatz, com $beta approx 0$ (grafo regular) a distância é alta e é proporcional a $N$, já em $beta approx 1$ o modelo se aproxima de um grafo aleatório tendo $chevron.l L chevron.r$ baixo, para valores intermediários $0<beta<1$ é possível atingir redes de "mundo pequeno" em que $chevron.l L chevron.r$ é pequeno mas que $C$ é alto
+
+#figure(
+  image("results/watts_strogatz_beta_vs_l_and_c/watts_strogatz_beta_vs_l_and_c-11189546e3c606329c7413d3392776c97ccb9e10.svg",width:70%),
+  caption: [Modelo de Watts-Strogatz $W S(3000, 6, beta)$ em gráfico análogo ao artigo original @wattsCollectiveDynamicsSmallworld1998, demonstrando a possibilidade de gerar grafos aleatórios com diferentes valores de $chevron.l L chevron.r$] 
+)
 
 
 
