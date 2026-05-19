@@ -21,31 +21,41 @@ end
 StructTypes.StructType(::Type{RoutingMethod}) = StructTypes.Struct()
 
 struct ObserverEdgeQueue
-    type::String # Literal["ObserverEdgeQueue"]
+    type::String
 end
+ObserverEdgeQueue() = ObserverEdgeQueue("ObserverEdgeQueue")
 StructTypes.StructType(::Type{ObserverEdgeQueue}) = StructTypes.Struct()
 
 struct ObserverEdgeReceivedMessages
     type::String
 end
+ObserverEdgeReceivedMessages() = ObserverEdgeReceivedMessages("ObserverEdgeReceivedMessages")
 StructTypes.StructType(::Type{ObserverEdgeReceivedMessages}) = StructTypes.Struct()
 
 struct ObserverEdgeCapacity
     type::String
     update_interval::UInt
 end
+ObserverEdgeCapacity(update_interval::Integer; type::String="ObserverEdgeCapacity") =
+    ObserverEdgeCapacity(type, update_interval)
 StructTypes.StructType(::Type{ObserverEdgeCapacity}) = StructTypes.Struct()
 
 struct ObserverTotalMessages
     type::String
 end
+ObserverTotalMessages() = ObserverTotalMessages("ObserverTotalMessages")
 StructTypes.StructType(::Type{ObserverTotalMessages}) = StructTypes.Struct()
 
 struct ModifierEdgeCapacity
     type::String
     free_flow_rate::Float64
     free_flow_sampling_time::Int
+    minimal_capacity::Int
+    multiplier::Float64
 end
+ModifierEdgeCapacity(free_flow_rate::Float64, free_flow_sampling_time::Int,
+    minimal_capacity::Int, multiplier::Float64; type::String="ModifierEdgeCapacity") =
+    ModifierEdgeCapacity(type, free_flow_rate, free_flow_sampling_time, minimal_capacity, multiplier)
 StructTypes.StructType(::Type{ModifierEdgeCapacity}) = StructTypes.Struct()
 
 
@@ -119,14 +129,14 @@ end
 
 function run_rust_cli(config::SimulationConfiguration, filename::String; num_threads::Union{Integer,Nothing}=nothing,
     force_overwrite::Bool=false)
-    run(`cargo install --git https://github.com/viniciusdutra314/GraphTraffic-rs --rev e4e3d85757d5a63be78bfcb204b9bbc66afaf920 --locked`)
+    run(`cargo install --git https://github.com/viniciusdutra314/GraphTraffic-rs --rev ed127dcdd65aeeca5f25765a695a08a6dcfd21cf --locked`)
     mktempdir() do temp_path
         temp_json_filename::String = joinpath(temp_path, "config.json")
         open(temp_json_filename, "w") do io
             JSON.json(io, config; pretty=true, omit_null=true)
         end
         complete_filename = joinpath(raw_results_folder, filename * ".hdf5")
-        cli_cmd = `graph_traffic_simulator $temp_json_filename`
+        cli_cmd = `graph_traffic $temp_json_filename`
         cli_cmd = `$cli_cmd --output-file-hdf5 $complete_filename`
         if !isnothing(num_threads)
             cli_cmd = `$cli_cmd --threads $num_threads`
@@ -348,9 +358,7 @@ function get_avg_traveling_time(sim_group::HDF5.Group)::Float64
 end
 
 function get_graph_hdf5_uuid(sim_group::HDF5.Group)::String
-    json = get_json(sim_group)
-    path = json.graph_file_name
-    splitext(basename(path))[1]
+    splitext(basename(get_json(sim_group).graph_file_name))[1]
 end
 
 function get_json(sim_group::HDF5.Group)

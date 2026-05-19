@@ -105,7 +105,7 @@ After generating the plots/tables, compile Typst from the repo root:
 
 - If you run `plot` before running `simulate`, the HDF5 files in `raw_results/` must already exist.
 - The Rust simulator is installed automatically the first time `run_rust_cli(...)` runs:
-  - `cargo install --git https://github.com/viniciusdutra314/GraphTraffic-rs --rev e4e3d85757d5a63be78bfcb204b9bbc66afaf920 --locked`
+  - `cargo install --git https://github.com/viniciusdutra314/GraphTraffic-rs --rev ed127dcdd65aeeca5f25765a695a08a6dcfd21cf --locked`
   - Ensure `cargo` is available in your PATH.
 
 ---

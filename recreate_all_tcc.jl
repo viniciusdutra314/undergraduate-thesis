@@ -2,11 +2,13 @@ include("src/GraphTraffic.jl")
 include("src/watts_classical_plot.jl")
 include("src/watts_messages_vs_time.jl")
 include("src/rho_vs_atraso.jl")
+include("src/rho_vs_atraso_adapted_capacity.jl")
 
 const EXPERIMENTS = (
     WattsStrogatzBetaVsLAndC,
     WattsStrogatzClassicPlot,
     RhoVsAtraso,
+    RhoVsAtrasoAdaptedCapacity
 )
 
 function usage()

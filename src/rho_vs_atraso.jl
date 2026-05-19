@@ -1,5 +1,5 @@
 module RhoVsAtraso
-include("GraphTraffic.jl")
+include("src/GraphTraffic.jl")
 using .GraphTraffic.Engine
 using .GraphTraffic.Schema
 using .GraphTraffic.Topology

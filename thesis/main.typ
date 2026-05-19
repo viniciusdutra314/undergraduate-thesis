@@ -30,8 +30,6 @@
 
 
 
-
-
 #let resumo_conteudo = par[
 ]
 
@@ -139,10 +137,22 @@ Roteamento dinamicos
 Dada a elevada combinatória de dinâmicas em grafos de médio porte ($|V| approx 10^3$), o simulador foi desenvolvido na linguagem Rust visando assegurar a viabilidade computacional das simulações em hardware convencional. Esta escolha fundamenta-se na necessidade de conciliar o desempenho de uma linguagem compilada a garantias rigorosas de segurança de memória, concorrência sem condições de corrida e corretude dos resultados @jungRustBeltSecuringFoundations2017. A implementação atual permite a execução paralela de simulações em redes compostas por milhares de nós, utilizando a biblioteca de alto desempenho #text(style: "italic")[rustworkx_core]
 @treinishRustworkxHighPerformanceGraph2022 para a manipulação eficiente de algoritmos e estruturas de dados.
 
-Os gráficos e as análises dos dados foram realizadas na linguagem de alto nível Julia @bezansonJuliaFreshApproach2017 com o usado da biblioteca Makie
-@danischMakiejlFlexibleHighperformance2021, oferecendo um equilíbrio entre agilidade,exploração interativa e desempenho
+Visando assegurar a reprodutibilidade das simulações e resultados apresentados,
+o código fonte do simulador foi disponibilizado em um repositório público no
+GitHub, acessível pelo endereço #link("https://github.com/viniciusdutra314/GraphTraffic-rs").
+O projeto está sob a licença permissiva MIT, viabilizando sua utilização,
+modificação e distribuição em diferentes contextos.
 
-A verificação da corretude do simulador foi realizada por uma extensa
+
+A verificação de corretude do simulador foi realizada por meio de uma bateria sistemática de testes unitários e de integração, como métrica quantitativa de qualidade de software, utilizou-se a ferramenta `llvm-cov` para mapear a cobertura de testes do código das mais de duas mil linhas que constituem o núcleo do simulador. Conforme ilustrado na @fig:table_llvm_cov, o conjunto de testes alcançou uma cobertura global de aproximadamente 95%, reduzindo a probabilidade de _bugs_ e aumentando a segurança dos resultados obtidos.
+
+#figure(
+  image("assets/tables/llvm_cov_table.png", width: 75%),
+  caption: [Cobertura de testes do simulador],
+) <fig:table_llvm_cov>
+
+Os gráficos e as análises dos dados foram realizadas na linguagem de alto nível Julia @bezansonJuliaFreshApproach2017 com o usado da biblioteca Makie
+@danischMakiejlFlexibleHighperformance2021, oferecendo um equilíbrio entre agilidade, exploração interativa e desempenho
 
 == Formalização do modelo de tráfego de pacotes <sec:formalização_modelo_trafego>
 
@@ -347,7 +357,7 @@ Essas arestas são removidas e substituídas pelas aresta $(u, x)$ e $(v, y)$. E
 
 Nos casos excepcionais onde uma das componentes é uma árvore ou um vértice isolado, situações em que não existem arestas que não sejam pontes, a conectividade é estabelecida pela inserção direta de uma nova aresta.
 
-== Adaptação da capacidade dos elos
+== Adaptação da capacidade dos elos <sec:adaptação_capacidade_elos>
 Assume-se que o sistema opera em um *regime não crítico*, isto é, a taxa de geração de mensagens É suficientemente baixa para evitar o congestionamento, permitindo que a rede atinja um equilíbrio estatístico. No estado de equilíbrio, associa-se a cada aresta $e in E$ uma função densidade de probabilidade, denotada por $f_e$, que representa a distribuição do número de mensagens na fila em um instante qualquer.
 
 Define-se a *Taxa de Fluxo Livre*, ou do inglês _Free Flow Rate_ (FFR) de uma aresta como a proporção de tempo em que o número de mensagens enfileiradas não excede a capacidade da aresta, ou seja, a fração do tempo em que as mensagens não sofrem atraso na sua entrega. Formalmente, para uma aresta $e$, a FFR é dada por:
@@ -375,7 +385,7 @@ Uma das vantagens desse método é por ele ser local, cada aresta só precisa de
 
 Todos os grafos comparados foram gerados com parâmetros de forma a não diferirem em mais do que 1% no número de nós e de arestas, a conectividade foi garantido pelo procedimento descrito na @section:procedimento_conectividade, isso estabelece uma comparação justa em um cenário que se queira uma rede eficiente dado $N$ nós e $M$ conexões entre eles
 
-== Sem adaptação
+== Sem adaptação <section:sem_adaptacao>
 
 
 A @fig:rho_vs_atraso compara a eficiência dos 4 modelos de grafos escolhidos para a análise, a aferição exata do valor de $p_c$ pra cada grafo é difícil de ser feita pois os atrasos progressivamente vão aumentando sem demonstrar uma clara transição de fase, no entanto, visualmente é possível afirmar que:
@@ -515,6 +525,21 @@ Realizando simulações em grafos Watts-Strogatz com diferentes valores de $beta
   caption: [Grafos Watts-Strogatz com diferentes valores de
     $chevron.l L chevron.r$, $mu$ é a média esperada de mensagens e  $sigma$ o desvio padrão esperado, ambos derivados da @eq:media_mensagens],
 ) <fig:watts_messages_vs_time>
+
+
+== Com adaptação
+Os resultados obtidos na seção anterior (@section:sem_adaptacao) suponha que todos as aresta tinham capacidade unitaria constante no tempo, agora o método descrito na seção (@sec:adaptação_capacidade_elos) de adaptação das capacidades dada o tráfego será o usado, nos mesmos grafos e nas mesmas condições
+
+
+#figure(
+  image("assets/plots/p_critico_travel_adapted_capacity.svg"), 
+  caption: [Comparação da eficiência das mesmas \
+    redes com/sem adaptação da capacidades das arestas]
+)
+
+#figure(
+  image("assets/plots/p_critico_capacity_adapted_capacity.svg")
+)
 
 
 = CONCLUSÕES E CONSIDERAÇÕES FINAIS
