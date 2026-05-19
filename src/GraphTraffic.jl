@@ -307,8 +307,8 @@ M = 3
 E = N * M
 β = 0.1
 βs_watts = [2.5e-3, 5e-3, 1e-2, 5e-2]
-N_watts = 3_000
-E_watts = 9_000
+N_watts = 3_00
+E_watts = 9_00
 watts_cmap = cgrad(cgrad(:inferno)[range(0, 0.75, length=256)])
 
 barabasi_graph = LazyGraph(barabasi_albert, (N, M))

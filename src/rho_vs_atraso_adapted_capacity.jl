@@ -42,8 +42,8 @@ function generate_data()
                 graph_file_name=graph_filename,
                 message_generation=rho,
                 max_iterations=iterations,
-                warm_up_iterations=Int(0.8*num_samplings),
-                graph_generation_info=Dict("graph_type" => graph_type,"is_adapted_capacity" => true),
+                warm_up_iterations=Int(0.8 * num_samplings),
+                graph_generation_info=Dict("graph_type" => graph_type, "is_adapted_capacity" => true),
                 modifiers=[ModifierEdgeCapacity(free_flow_rate, sampling_time,
                     minimal_capacity, multiplier)],
                 observers=GraphTraffic.Schema.ObserversUnion[ObserverEdgeCapacity(sampling_time)]
@@ -53,8 +53,8 @@ function generate_data()
                 graph_file_name=graph_filename,
                 message_generation=rho,
                 max_iterations=iterations,
-                warm_up_iterations=Int(0.8*num_samplings),
-                graph_generation_info=Dict("graph_type" => graph_type,"is_adapted_capacity" => false),
+                warm_up_iterations=Int(0.8 * num_samplings),
+                graph_generation_info=Dict("graph_type" => graph_type, "is_adapted_capacity" => false),
                 observers=GraphTraffic.Schema.ObserversUnion[ObserverEdgeCapacity(sampling_time)]
             ))
         end
@@ -67,8 +67,8 @@ function plot()
     open_raw_results(hdf5_filename, "r") do hfile
         fig_delay = Figure(size=(900, 550))
         fig_capacity = Figure(size=(900, 550))
-        adaptado_title="Capacidade adaptada"
-        sem_adaptado_title="Capacidade fixa"
+        adaptado_title = "Capacidade adaptada"
+        sem_adaptado_title = "Capacidade fixa"
         ax_capacity_adapted = Axis(fig_capacity[1, 1],
             xlabel=L"Geração de mensagens ($\rho$)",
             ylabel=L"\frac{\text{Capacidade total}}{E}",
@@ -118,10 +118,10 @@ function plot()
         )
 
         sim_results = hfile["simulations_results"]
-        y_max_delay=-Inf
-        y_min_delay=Inf
-        y_max_capacity=-Inf
-        y_min_capacity=Inf
+        y_max_delay = -Inf
+        y_min_delay = Inf
+        y_max_capacity = -Inf
+        y_min_capacity = Inf
         legend_plots = Dict{String,Any}()
         for sim_result in sim_results
             json_config = get_json(sim_result)
@@ -134,7 +134,7 @@ function plot()
             capacities = reduce(hcat, values(capacities_over_time))
             total_capacity = sum(capacities, dims=1)
             mean_val = mean(total_capacity ./ E)
-            std_val  = std(total_capacity ./ E)
+            std_val = std(total_capacity ./ E)
 
             target_delay_axis = is_adapted_capacity ? ax_delay_adapted : ax_delay_not_adapted
             target_capacity_axis = is_adapted_capacity ? ax_capacity_adapted : ax_capacity_not_adapted
@@ -157,21 +157,17 @@ function plot()
             y_min_capacity = min(y_min_capacity, mean_val)
 
         end
-        for ax in (ax_delay_adapted ,ax_delay_not_adapted)
-            ylims!(ax,(0.8y_min_delay,1.2y_max_delay))
+        for ax in (ax_delay_adapted, ax_delay_not_adapted)
+            ylims!(ax, (0.8y_min_delay, 1.2y_max_delay))
         end
 
         for ax in (ax_capacity_adapted, ax_capacity_not_adapted)
-            ylims!(ax,(0.8y_min_capacity,1.2y_max_capacity))
+            ylims!(ax, (0.8y_min_capacity, 1.2y_max_capacity))
         end
-        for (graph_type, plot) in legend_plots
-            axislegend(ax_capacity_adapted, plot, position=:lt, framevisible=true, labelsize=12, patchsize=(18, 12))
-        end
+        # for (graph_type, plot) in legend_plots
+        #     axislegend(ax_capacity_adapted, plot, position=:lt, framevisible=true, labelsize=12, patchsize=(18, 12))
+        # end
 
-        #axislegend(ax_delay_adapted, position=:lt, framevisible=true, labelsize=12, patchsize=(18, 12))
-        #axislegend(ax_delay_not_adapted, position=:lt, framevisible=true, labelsize=12, patchsize=(18, 12))
-        #axislegend(ax_capacity_adapted, position=:lt, framevisible=true, labelsize=12, patchsize=(18, 12))
-        #axislegend(ax_capacity_not_adapted, position=:lt, framevisible=true, labelsize=12, patchsize=(18, 12))
         save_figure("p_critico_travel_adapted_capacity", fig_delay)
         save_figure("p_critico_capacity_adapted_capacity", fig_capacity)
     end
