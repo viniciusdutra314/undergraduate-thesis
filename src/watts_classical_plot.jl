@@ -1,5 +1,5 @@
 module WattsStrogatzClassicPlot
-include("src/GraphTraffic.jl")
+include("GraphTraffic.jl")
 using .GraphTraffic.Engine
 using .GraphTraffic.Schema
 using .GraphTraffic.Topology
@@ -10,8 +10,7 @@ using UUIDs
 using CairoMakie
 using Statistics
 using HDF5
-N = 3_000
-E = 9_000
+
 iterations = 1000
 rho = 1e-3
 βs=range_logarithmic(start=1e-4, stop=1.0, length=1000)

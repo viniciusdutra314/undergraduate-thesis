@@ -39,12 +39,10 @@ function generate_data()
         for rho in rhos
             push!(simulations, SimulationConfigurationItem(uuid=UUIDs.uuid4(),
                 routing_method="minimal_paths",
-                max_visibility=nothing,
                 graph_file_name=graph_filename,
                 message_generation=rho,
                 max_iterations=iterations,
                 warm_up_iterations=Int(0.8*num_samplings),
-                random_seed=nothing,
                 graph_generation_info=Dict("graph_type" => graph_type,"is_adapted_capacity" => true),
                 modifiers=[ModifierEdgeCapacity(free_flow_rate, sampling_time,
                     minimal_capacity, multiplier)],
@@ -52,12 +50,10 @@ function generate_data()
             ))
             push!(simulations, SimulationConfigurationItem(uuid=UUIDs.uuid4(),
                 routing_method="minimal_paths",
-                max_visibility=nothing,
                 graph_file_name=graph_filename,
                 message_generation=rho,
                 max_iterations=iterations,
                 warm_up_iterations=Int(0.8*num_samplings),
-                random_seed=nothing,
                 graph_generation_info=Dict("graph_type" => graph_type,"is_adapted_capacity" => false),
                 observers=GraphTraffic.Schema.ObserversUnion[ObserverEdgeCapacity(sampling_time)]
             ))

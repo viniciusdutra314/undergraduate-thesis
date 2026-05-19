@@ -42,7 +42,6 @@
     show math.equation: it => panic("O resumo não deve conter equações matemáticas.")
     show cite: it => panic("O resumo não deve conter citações.")
     show ref: it => panic("O resumo não deve conter referências")
-
     resumo_conteudo
   }
   resumo_verificado
@@ -125,10 +124,6 @@ tipos de otimização possíveis
 políticas de filas
 
 Roteamento dinamicos
-
-
-
-
 
 
 = MATERIAIS E MÉTODOS
@@ -528,22 +523,64 @@ Realizando simulações em grafos Watts-Strogatz com diferentes valores de $beta
 
 
 == Com adaptação
-Os resultados obtidos na seção anterior (@section:sem_adaptacao) suponha que todos as aresta tinham capacidade unitaria constante no tempo, agora o método descrito na seção (@sec:adaptação_capacidade_elos) de adaptação das capacidades dada o tráfego será o usado, nos mesmos grafos e nas mesmas condições
+Os resultados obtidos na seção anterior (@section:sem_adaptacao) suponham que todos as aresta tinham capacidade unitaria constante no tempo, agora o método descrito na seção (@sec:adaptação_capacidade_elos) de adaptação das capacidades dada o tráfego será o usado, nos mesmos grafos e nas mesmas condições
+
 
 
 #figure(
-  image("assets/plots/p_critico_travel_adapted_capacity.svg"), 
+  image("assets/plots/p_critico_travel_adapted_capacity.svg"),
   caption: [Comparação da eficiência das mesmas \
-    redes com/sem adaptação da capacidades das arestas]
+    redes com/sem adaptação da capacidades das arestas],
 )
 
 #figure(
-  image("assets/plots/p_critico_capacity_adapted_capacity.svg")
+  image("assets/plots/p_critico_capacity_adapted_capacity.svg"),
 )
 
+== Diferentes roteamentos
+
+As análises nas seções anteriores eram baseadas em roteamento por caminhos mínimos, isso porque esse é o tipo de roteamento mais desejado, pois ele minimiza o tempo de entrega dos pacotes, e também, pela sua previsibilidade, vários resultados analíticos interessantes são conhecidos.
+
+Porém, na prática nem sempre é possível que todos os nós tenham informação sobre a rede a ponto de calcularem mínimos caminhos, o próprio simulador desenvolvido nesse trabalho não consegue escalar para redes de dezenas de milhares de nós. Nesse caso, roteamento de visibilidade limitada são considerados, os três roteamentos descritos na @sec:formalização_modelo_trafego serão vistos como um roteamento de visibilidade limitada $k$ em três situações distintas, como descrito na @table:visibilidade_limitada, podemos fazer gráficos com um dos eixos sendo $k$ e dessa forma analisar os três roteamentos ao mesmo tempo
+#v(10pt)
+#figure(
+  align(center)[
+    #box(width: 75%)[
+      #table(
+        columns: (1fr, 1fr),
+        align: (center, left),
+        inset: 6pt,
+        stroke: 0.8pt + gray,
+        fill: (x, y) => if y == 0 { gray.lighten(85%) } else { gray.lighten(96%) },
+        table.header([*Visibilidade ($k$)*], [*Interpretação*]),
+        [*$k = 0$*], [Passeio aleatório],
+        [*$0 < k < d$*], [Visibilidade limitada],
+        [*$k = d$*], [Caminhos mínimos],
+      )
+    ]
+  ],
+  caption: [Relação entre $k$ e os três roteamentos],
+) <table:visibilidade_limitada>
+#v(10pt)
+
+
+Para gerar grafos com diferentes valores de diâmetro e distribuição de distâncias, o mesmo método da @fig:watts_strogatz_classico de utilizar diferentes valores de $beta$ no modelo de Watts-Strogatz será usado, como ilustrado na @fig:visibilidade_limitada_grid. Os histogramas deixam claro porque  $chevron.l L chevron.r$ sozinho não é suficiente para descrever toda a dinâmica de roteamento, a variança dos histogramas alta, tornando a média por si só insuficiente para descrever a dinâmica.
+
+#figure(
+  align(center)[
+    #box(
+      figure(
+        image("assets/plots/visibilidade_limitada_grid.svg"),
+        caption: [Distribuição de distâncias de diferentes grafos Watts-Strogatz],
+      ),
+      width: 80%,
+    )
+  ],
+) <fig:visibilidade_limitada_grid>
+
+Um resultado interessante é que $k$ não necessariamente precisa ser próximo de $d$ para que o roteamento se comporte de maneira parecida a mínimos caminhos. A eficiência é determinada pela distribuição de distâncias, mais especificamente pela função cumulativa de distâncias. Se somente uma porcentagem muito pequena dos pares $(s,t)$ está a distâncias maiores do que $k$, então na maioria das vezes a visibilidade é suficiente para encontrar um caminho mínimo, mesmo que não seja próximo do diâmetro.
 
 = CONCLUSÕES E CONSIDERAÇÕES FINAIS
-
 
 
 

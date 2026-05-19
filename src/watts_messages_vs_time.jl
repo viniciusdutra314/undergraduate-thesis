@@ -18,19 +18,16 @@ rho = 1e-3
 hdf5_filename = "watts_strogatz_varying_beta"
 
 function generate_data()
-    βs = [2.5e-3, 5e-3, 1e-2, 5e-2]
-    graphs = connect_and_compare_graphs([LazyGraph(watts_strogatz_given_m, (N, E, β)) for β in βs]...)
+    βs_watts = [2.5e-3, 5e-3, 1e-2, 5e-2]
+    graphs = connect_and_compare_graphs([LazyGraph(watts_strogatz_given_m, (N, E, β)) for β in βs_watts]...)
     simulations::GraphTraffic.Schema.SimulationConfiguration = []
     for graph in graphs
         graph_filename = temp_save_edgelist(graph)
         push!(simulations, SimulationConfigurationItem(uuid=UUIDs.uuid4(),
             routing_method="minimal_paths",
-            max_visibility=nothing,
             graph_file_name=graph_filename,
             message_generation=rho,
             max_iterations=iterations,
-            warm_up_iterations=nothing,
-            random_seed=nothing,
             observers=[ObserverTotalMessages("ObserverTotalMessages")],
         ))
     end

@@ -65,7 +65,6 @@ const ModifiersUnion = ModifierEdgeCapacity
 struct SimulationConfigurationItem
     uuid::UUID
     routing_method::Union{String,RoutingMethod}
-    max_visibility::Union{Int,Nothing}
     graph_file_name::String
     message_generation::Float64
     max_iterations::UInt
@@ -78,10 +77,10 @@ end
 
 SimulationConfigurationItem(;
     uuid, routing_method, graph_file_name, message_generation, max_iterations,
-    max_visibility=nothing, warm_up_iterations=nothing, random_seed=nothing,
+    warm_up_iterations=nothing, random_seed=nothing,
     graph_generation_info=nothing, modifiers=nothing, observers=nothing
 ) = SimulationConfigurationItem(
-    uuid, routing_method, max_visibility, graph_file_name, message_generation,
+    uuid, routing_method, graph_file_name, message_generation,
     max_iterations, warm_up_iterations, random_seed, graph_generation_info,
     modifiers, observers
 )
@@ -106,7 +105,7 @@ const raw_results_folder = normpath(@__DIR__, "..", "raw_results")
 function make_cli(generate_data::Function, plot::Function)
     function main(args::Vector{String}=String[])
         if isempty(args)
-            println("Usage: julia code.jl [generate_data|plot|all]")
+            println("Usage: julia code.jl [simulate|plot|all]")
             return
         end
         cmd = lowercase(args[1])
@@ -118,7 +117,7 @@ function make_cli(generate_data::Function, plot::Function)
             generate_data()
             plot()
         elseif cmd == "help" || cmd == "--help" || cmd == "-h"
-            println("Usage: julia code.jl [generate_data|plot|all]")
+            println("Usage: julia code.jl [simulate|plot|all]")
         else
             error("Unknown command: $cmd")
         end
@@ -300,12 +299,18 @@ module SharedData
 using Graphs
 using ..Topology: LazyGraph,
     random_geometric_graph, watts_strogatz_given_m
+using CairoMakie
 export erdos_name, barabasi_name, rgg_name, watts_name,
-    barabasi_graph, erdos_graph, rgg_graph, watts_graph
-N = 5000
+    barabasi_graph, erdos_graph, rgg_graph, watts_graph, βs_watts, N_watts, E_watts, watts_cmap
+N = 500
 M = 3
 E = N * M
 β = 0.1
+βs_watts = [2.5e-3, 5e-3, 1e-2, 5e-2]
+N_watts = 3_000
+E_watts = 9_000
+watts_cmap = cgrad(cgrad(:inferno)[range(0, 0.75, length=256)])
+
 barabasi_graph = LazyGraph(barabasi_albert, (N, M))
 erdos_graph = LazyGraph(erdos_renyi, (N, E))
 rgg_graph = LazyGraph(random_geometric_graph, (N, E))
