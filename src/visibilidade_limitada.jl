@@ -4,7 +4,7 @@ using .GraphTraffic.Engine
 using .GraphTraffic.Schema
 using .GraphTraffic.Topology
 using .GraphTraffic.Analysis
-using .GraphTraffic.ColorPalette: topology_to_color
+using .GraphTraffic.Style: topology_to_color
 using .GraphTraffic.SharedData
 using Graphs
 using UUIDs
@@ -15,11 +15,11 @@ using NPZ
 
 
 iterations = 10_000
-N = 20
+N = 100
 sampling_time::Int = div(iterations, N)
 free_flow_rate::Float64 = 0.99
 minimal_capacity::Int = 1
-multiplier::Float64 = 4.0
+multiplier::Float64 = 1
 rho = 1e-3
 hdf5_filename = "visibilidade_limitada"
 
@@ -31,16 +31,64 @@ hdf5_filename = "visibilidade_limitada"
 )
 
 function plot_correlations()
-    fig_correlations = Figure(size=(900, 900))
-    β_to_axis = Dict{Float64, Axis}()
+    fig_correlations = Figure(size=(800, 800))
+    β_to_axis = Dict{Float64,Axis}()
     for β in βs_watts
         row, col = β_to_grid_position[β]
-        ax = Axis(fig_correlations[row, col], xlabel="Visibilidade", ylabel="Correção capacidade x intermediação")
+        ax = Axis(fig_correlations[row, col],
+            xlabel="Visibilidade",
+            ylabel="Porcentagem (100%)",
+            yticks=0:10:100
+        )
+        ylims!(ax, 0, 100)
         β_to_axis[β] = ax
     end
+    open_raw_results(hdf5_filename, "r") do hfile
+        edge_betweeness_dict = Dict{String,Vector{Float64}}()
+        for graph_uuid in keys(hfile["graphs"])
+            g = get_graph(hfile["graphs"][graph_uuid])
+            edge_betweeness_dict[string(graph_uuid)] = edge_betweeness_normalized(g)
+        end
 
-    
 
+        sims = hfile["simulations_results"]
+        visibility_by_β = Dict{Float64,Vector{Int64}}()
+        r_squared_by_β = Dict{Float64,Vector{Float64}}()
+        for sim in sims
+            json = get_json(sim)
+            β = parse(Float64, json["graph_generation_info"]["graph_type"])
+            visibility::Int64 = json["routing_method"]["limited_visibility"]
+            capacities_over_time = get_edge_capacity(sim)
+            capacities_array = reduce(hcat, values(capacities_over_time))
+            mean_capacity = mean(capacities_array, dims=2)
+            betweeness = edge_betweeness_dict[get_graph_hdf5_uuid(sim)]
+            valid_indices = findall(!=(1), mean_capacity)
+            if isempty(valid_indices)
+                continue
+            end
+
+            betweeness_capacity_R_squared = cor(mean_capacity[valid_indices], betweeness[valid_indices])^2
+
+            if !haskey(visibility_by_β, β)
+                visibility_by_β[β] = Int64[]
+                r_squared_by_β[β] = Float64[]
+            end
+            push!(visibility_by_β[β], visibility)
+            push!(r_squared_by_β[β], betweeness_capacity_R_squared)
+        end
+        for β in βs_watts
+            ax = β_to_axis[β]
+            scatter!(ax, visibility_by_β[β], 100 * r_squared_by_β[β],
+                label="Intermediação x capacidade",
+                color=:blue)
+        end
+        for ax in values(β_to_axis)
+            axislegend(ax, L"Correlações ($R^2$)", position=:lt)
+        end
+    end
+
+    save_figure("visibilidade_limitada_correlations", fig_correlations)
+    fig_correlations
 end
 
 
@@ -70,11 +118,13 @@ function plot_histograms()
     end
     Colorbar(fig[1:2, 3], colormap=watts_cmap, label=L"Distância média $\langle L \rangle$", limits=(mins, maxs))
     save_figure("visibilidade_limitada_grid", fig)
+    fig
 end
 
 
 
 function plot()
+    plot_correlations()
     plot_histograms()
 end
 
@@ -97,7 +147,7 @@ function generate_data()
                 message_generation=rho,
                 max_iterations=iterations,
                 graph_generation_info=Dict("graph_type" => graph_type),
-                warm_up_iterations=Int(0.8 * N * sampling_time),
+                warm_up_iterations=Int(0.8 * iterations),
                 observers=GraphTraffic.Schema.ObserversUnion[ObserverEdgeCapacity(sampling_time)],
                 modifiers=[ModifierEdgeCapacity(free_flow_rate, sampling_time,
                     minimal_capacity, multiplier)],

@@ -1,10 +1,10 @@
 module RhoVsAtraso
-include("src/GraphTraffic.jl")
+include("GraphTraffic.jl")
 using .GraphTraffic.Engine
 using .GraphTraffic.Schema
 using .GraphTraffic.Topology
 using .GraphTraffic.Analysis
-using .GraphTraffic.ColorPalette: topology_to_color
+using .GraphTraffic.Style: topology_to_color
 using .GraphTraffic.SharedData
 using JSON
 using LsqFit

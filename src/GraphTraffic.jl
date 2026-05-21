@@ -1,9 +1,39 @@
 module GraphTraffic
-export Engine, Topology, Analysis, Schema, ColorPalette, SharedData
+export Engine, Topology, Analysis, Schema, Style, SharedData
 
-module ColorPalette
-export topology_to_color
+module Style
+export topology_to_color, log_x_log_y_style, log_x_style
+using CairoMakie
 const topology_to_color::Dict{String,String} = Dict("Barabási–Albert" => "red", "Erdős–Rényi" => "blue", "Rede Geométrica" => "green", "Watts–Strogatz" => "purple")
+const log_x_log_y_style = (
+    xscale=log10,
+    yscale=log10,
+    xminorticks=IntervalsBetween(9),
+    yminorticks=IntervalsBetween(9),
+    xminorticksvisible=true,
+    yminorticksvisible=true,
+    xminorgridvisible=true,
+    yminorgridvisible=true,
+    xgridcolor=:gray70,
+    ygridcolor=:gray70,
+    xminorgridcolor=:gray85,
+    yminorgridcolor=:gray85,
+    xlabelsize=18,
+    ylabelsize=18,
+    xticklabelsize=14,
+    yticklabelsize=14
+)
+
+const log_x_style = (
+    xscale=log10,
+    xminorticks=IntervalsBetween(9),
+    xminorticksvisible=true,
+    xminorgridvisible=true,
+    xgridcolor=:gray70,
+    xminorgridcolor=:gray85,
+    xlabelsize=18,
+    xticklabelsize=14
+)
 end
 
 
@@ -148,8 +178,7 @@ function run_rust_cli(config::SimulationConfiguration, filename::String; num_thr
 end
 
 function open_raw_results(f::Function, filename::AbstractString, mode::AbstractString="r"; kwargs...)
-    path = isabspath(filename) ? filename : joinpath(raw_results_folder, filename)
-    HDF5.h5open(f, path * ".hdf5", mode; kwargs...)
+    HDF5.h5open(f, joinpath(raw_results_folder, filename) * ".hdf5", mode; kwargs...)
 end
 
 end
@@ -302,13 +331,13 @@ using ..Topology: LazyGraph,
 using CairoMakie
 export erdos_name, barabasi_name, rgg_name, watts_name,
     barabasi_graph, erdos_graph, rgg_graph, watts_graph, βs_watts, N_watts, E_watts, watts_cmap
-N = 500
+N = 5000
 M = 3
 E = N * M
 β = 0.1
 βs_watts = [2.5e-3, 5e-3, 1e-2, 5e-2]
-N_watts = 3_00
-E_watts = 9_00
+N_watts = 3_000
+E_watts = 9_000
 watts_cmap = cgrad(cgrad(:inferno)[range(0, 0.75, length=256)])
 
 barabasi_graph = LazyGraph(barabasi_albert, (N, M))

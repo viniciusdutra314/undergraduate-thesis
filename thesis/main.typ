@@ -30,7 +30,7 @@
 
 
 #let resumo_conteudo = par[
-  O trabalho apresenta resultados computacionais e a fundamentação teórica de um simulador paralelo de alto desempenho escrito em Rust (_GraphTraffic-rs_) de tráfego de pacotes em redes complexas, com suporte a diferentes roteamentos (caminhos mínimos, passeio aleatório e visibilidade limitada), armazenamento eficiente de resultados em formato HDF5 
+  O trabalho apresenta resultados computacionais e a fundamentação teórica de um simulador paralelo de alto desempenho escrito em Rust (_GraphTraffic-rs_) de tráfego de pacotes em redes complexas, com suporte a diferentes roteamentos (caminhos mínimos, passeio aleatório e visibilidade limitada), armazenamento eficiente de resultados em formato HDF5
   e performance suficiente para simulações de roteamento de mínimos caminhos com grafos na ordem de alguns milhares de nós em um computador doméstico. O problema do tráfego é visto como uma questão de otimização matemática em que se deseja ter um trafego eficiente (pouco atraso e alta geração crítica de mensagens) com mínima capacidade total, que esta relacionado diretamente com o custo de infraestrutura da rede.
   É proposto um método local de atualização da capacidade das arestas baseado no histograma empírico do número de mensagens observados, a eficácia do método é avaliada em diferentes situações e alguns resultados analíticos são encontrados.
   Diferentes modelos de grafos são analisados como Albert-Barabási, Erdős–Rényi, Watts-Strogatz e rede geométrica.
@@ -450,12 +450,12 @@ A distância média da rede é um fator  importante na sua eficiência, no regim
 
 Para um roteamento de mínimos caminhos, uma forma simples de prever quantas mensagens $M_e$ passam por uma aresta $e$ , é através da sua intermediação, como ilustra a @fig:intermediação_vs_mensagens existe uma relação linear entra ela e o número de mensagens, isso acontece pois a centralidade de intermediação mede a quantidade de mínimos caminhos que passam pela aresta, como o roteamento é por mínimos caminhos, essa grandeza mede diretamente o quanto é esperado de tráfego.
 
-Como a geração de mensagens é um conjunto de ensaios de Bernoulli para cada vértice, o número total de mensagens geradas segue uma distribuição binominal $B(N,rho)$, podemos estimar $M_e$ como sendo:
+Como a geração de mensagens é um conjunto de ensaios de Bernoulli para cada vértice, o número total de mensagens geradas segue uma distribuição binominal $B(N,rho)$, podemos estimar  #footnote[A demonstração completa formal da @eq:mensagem_estimada_e se encontra em @huangInvestigationBothLocal2009] $M_e$ como sendo:
 
 
 $
   M_e ≃ sum_(s,t in V) underbrace(( B(N,rho))/(N(N-1)), #stack(dir: ttb, [Fração das mensagens geradas], [ com origem em $s$ e destino $t$])) times underbrace(sigma(s, t | e)/(sigma(s, t)), #stack(dir: ttb, [Fração dos caminhos mínimos ], [que passam por $e$]))=B(N,rho) times b_e
-$
+$ <eq:mensagem_estimada_e>
 
 
 #let betweeness_vs_messages = csv(

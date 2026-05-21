@@ -4,7 +4,7 @@ using .GraphTraffic.Engine
 using .GraphTraffic.Schema
 using .GraphTraffic.Topology
 using .GraphTraffic.Analysis
-using .GraphTraffic.ColorPalette: topology_to_color
+using .GraphTraffic.Style: topology_to_color
 using Graphs
 using UUIDs
 using CairoMakie
@@ -13,8 +13,8 @@ using HDF5
 
 iterations = 1000
 rho = 1e-3
-βs=range_logarithmic(start=1e-4, stop=1.0, length=1000)
-npz_filename="raw_results/watts_classical_plot.npz"
+βs = range_logarithmic(start=1e-4, stop=1.0, length=1000)
+npz_filename = "raw_results/watts_classical_plot.npz"
 function plot()
     data = npzread(npz_filename)
     l_values = data["l_values"]

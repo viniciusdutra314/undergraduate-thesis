@@ -4,7 +4,7 @@ using .GraphTraffic.Engine
 using .GraphTraffic.Schema
 using .GraphTraffic.Topology
 using .GraphTraffic.Analysis
-using .GraphTraffic.ColorPalette: topology_to_color
+using .GraphTraffic.Style
 using .GraphTraffic.SharedData
 using JSON
 using LsqFit
@@ -20,13 +20,13 @@ using CairoMakie
 using LaTeXStrings
 
 
-sampling_time = 200
-num_samplings = 100
+sampling_time = 100
+num_samplings = 200
 iterations = num_samplings * sampling_time
-rhos = range_logarithmic(start=1e-3, stop=0.25, length=20)
+rhos = range_logarithmic(start=1e-2, stop=0.2, length=20)
 free_flow_rate::Float64 = 0.99
 minimal_capacity::Int = 1
-multiplier::Float64 = 4
+multiplier::Float64 = 1
 hdf5_filename::String = "varying_message_generation_adapted_capacity"
 
 function generate_data()
@@ -42,7 +42,7 @@ function generate_data()
                 graph_file_name=graph_filename,
                 message_generation=rho,
                 max_iterations=iterations,
-                warm_up_iterations=Int(0.8 * num_samplings),
+                warm_up_iterations=Int(0.9 * iterations),
                 graph_generation_info=Dict("graph_type" => graph_type, "is_adapted_capacity" => true),
                 modifiers=[ModifierEdgeCapacity(free_flow_rate, sampling_time,
                     minimal_capacity, multiplier)],
@@ -53,7 +53,7 @@ function generate_data()
                 graph_file_name=graph_filename,
                 message_generation=rho,
                 max_iterations=iterations,
-                warm_up_iterations=Int(0.8 * num_samplings),
+                warm_up_iterations=Int(0.9 * iterations),
                 graph_generation_info=Dict("graph_type" => graph_type, "is_adapted_capacity" => false),
                 observers=GraphTraffic.Schema.ObserversUnion[ObserverEdgeCapacity(sampling_time)]
             ))
@@ -63,67 +63,9 @@ function generate_data()
 end
 
 
-function plot()
+function __preprocess_data()
     open_raw_results(hdf5_filename, "r") do hfile
-        fig_delay = Figure(size=(900, 550))
-        fig_capacity = Figure(size=(900, 550))
-        adaptado_title = "Capacidade adaptada"
-        sem_adaptado_title = "Capacidade fixa"
-        ax_capacity_adapted = Axis(fig_capacity[1, 1],
-            xlabel=L"Geração de mensagens ($\rho$)",
-            ylabel=L"\frac{\text{Capacidade total}}{E}",
-            xscale=log10,
-            yscale=log10,
-            xlabelsize=18,
-            ylabelsize=18,
-            title=adaptado_title,
-            titlesize=20,
-            xticklabelsize=14,
-            yticklabelsize=14
-        )
-
-        ax_capacity_not_adapted = Axis(fig_capacity[1, 2],
-            xscale=log10,
-            yscale=log10,
-            xlabelsize=18,
-            ylabelsize=18,
-            title=sem_adaptado_title,
-            titlesize=20,
-            xticklabelsize=14,
-            yticklabelsize=14
-        )
-
-        ax_delay_adapted = Axis(fig_delay[1, 1],
-            xlabel=L"Geração de mensagens ($\rho$)",
-            ylabel=L"Atraso médio ($\delta$)",
-            xlabelsize=18,
-            xscale=log10,
-            yscale=log10,
-            ylabelsize=18,
-            title=adaptado_title,
-            titlesize=20,
-            xticklabelsize=14,
-            yticklabelsize=14
-        )
-
-        ax_delay_not_adapted = Axis(fig_delay[1, 2],
-            xlabelsize=18,
-            xscale=log10,
-            yscale=log10,
-            ylabelsize=18,
-            title=sem_adaptado_title,
-            titlesize=20,
-            xticklabelsize=14,
-            yticklabelsize=14
-        )
-
-        sim_results = hfile["simulations_results"]
-        y_max_delay = -Inf
-        y_min_delay = Inf
-        y_max_capacity = -Inf
-        y_min_capacity = Inf
-        legend_plots = Dict{String,Any}()
-        for sim_result in sim_results
+        data = map(hfile["simulations_results"]) do sim_result
             json_config = get_json(sim_result)
             msg_generation::Float64 = json_config.message_generation
             graph_type::String = json_config.graph_generation_info["graph_type"]
@@ -135,48 +77,76 @@ function plot()
             total_capacity = sum(capacities, dims=1)
             mean_val = mean(total_capacity ./ E)
             std_val = std(total_capacity ./ E)
-
-            target_delay_axis = is_adapted_capacity ? ax_delay_adapted : ax_delay_not_adapted
-            target_capacity_axis = is_adapted_capacity ? ax_capacity_adapted : ax_capacity_not_adapted
-            scatter!(target_delay_axis, msg_generation, get_avg_delay(sim_result),
-                color=topology_to_color[graph_type], strokewidth=1.2)
-            errorbars!(target_capacity_axis, [msg_generation], [mean_val], [std_val],
-                color=topology_to_color[graph_type], linewidth=2, alpha=0.35)
-            scatter!(target_capacity_axis, msg_generation, mean_val,
-                color=topology_to_color[graph_type]
+            return (
+                graph_type=graph_type,
+                is_adapted_capacity=is_adapted_capacity,
+                msg_generation=msg_generation,
+                mean_capacity_over_E=mean_val,
+                std_capacity_over_E=std_val,
+                avg_traveling_time=get_avg_traveling_time(sim_result)
             )
-            lines!(target_capacity_axis, [msg_generation], [mean_val],
-                color=topology_to_color[graph_type])
-            if !haskey(legend_plots, graph_type)
-                legend_plots[graph_type] = scatter!(target_capacity_axis, Float64[], Float64[],
-                    color=topology_to_color[graph_type], label=graph_type)
-            end
-            y_max_delay = max(y_max_delay, get_avg_delay(sim_result))
-            y_min_delay = min(y_min_delay, get_avg_delay(sim_result))
-            y_max_capacity = max(y_max_capacity, mean_val)
-            y_min_capacity = min(y_min_capacity, mean_val)
-
         end
-        for ax in (ax_delay_adapted, ax_delay_not_adapted)
-            ylims!(ax, (0.8y_min_delay, 1.2y_max_delay))
-        end
-
-        for ax in (ax_capacity_adapted, ax_capacity_not_adapted)
-            ylims!(ax, (0.8y_min_capacity, 1.2y_max_capacity))
-        end
-        # for (graph_type, plot) in legend_plots
-        #     axislegend(ax_capacity_adapted, plot, position=:lt, framevisible=true, labelsize=12, patchsize=(18, 12))
-        # end
-
-        save_figure("p_critico_travel_adapted_capacity", fig_delay)
-        save_figure("p_critico_capacity_adapted_capacity", fig_capacity)
+        DataFrame(data)
     end
+
+end
+
+
+function plot()
+    df = __preprocess_data()
+    sort!(df, [:graph_type, :msg_generation])
+    fig_traveling_time = Figure(size=(900, 550))
+    fig_capacity = Figure(size=(450, 550))
+    xlabel = L"Geração de mensagens ($\rho$)"
+    ylabel_traveling_time = "Tempo médio de viagem"
+    ax_capacity = Axis(fig_capacity[1, 1];
+        xlabel=xlabel,
+        ylabel="Capacidade total por aresta",
+        log_x_style...,
+    )
+
+    ax_traveling_time_adapted = Axis(fig_traveling_time[1, 1];
+        title="Capacidade adaptada",
+        xlabel=xlabel,
+        ylabel=ylabel_traveling_time,
+        log_x_log_y_style...
+    )
+
+    ax_traveling_time_not_adapted = Axis(fig_traveling_time[1, 2];
+        title="Capacidade fixa",
+        xlabel=xlabel,
+        ylabel=ylabel_traveling_time,
+        log_x_log_y_style...
+    )
+    linkyaxes!(ax_traveling_time_adapted, ax_traveling_time_not_adapted)
+
+    for sub_df in groupby(df, [:graph_type, :is_adapted_capacity])
+        is_adapted = first(sub_df.is_adapted_capacity)
+        graph_type = first(sub_df.graph_type)
+        color = topology_to_color[graph_type]
+        traveling_time_axis = is_adapted ? ax_traveling_time_adapted : ax_traveling_time_not_adapted
+        scatter!(traveling_time_axis, sub_df.msg_generation, sub_df.avg_traveling_time,
+            color=color, label=graph_type)
+        errorbars!(ax_capacity, sub_df.msg_generation, sub_df.mean_capacity_over_E, sub_df.std_capacity_over_E,
+            color=color, alpha=0.35)
+        if is_adapted
+            scatter!(ax_capacity, sub_df.msg_generation, sub_df.mean_capacity_over_E,
+                color=color, label=graph_type)
+        end
+    end
+    hlines!(ax_capacity, 1.0, color=:black, linestyle=:dash, label="Capacidade fixa")
+
+    for ax in (ax_capacity, ax_traveling_time_adapted)
+        axislegend(ax,
+            position=:lt,
+            margin=(15, 15, 15, 15),
+            padding=(10, 10, 10, 10)
+        )
+    end
+    save_figure("p_critico_travel_adapted_capacity", fig_traveling_time)
+    save_figure("p_critico_capacity_adapted_capacity", fig_capacity)
 end
 
 const main = make_cli(generate_data, plot)
 end
 
-
-if abspath(PROGRAM_FILE) == @__FILE__
-    RhoVsAtrasoAdaptedCapacity.main(ARGS)
-end
