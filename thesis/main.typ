@@ -29,10 +29,12 @@
 #heading("RESUMO", numbering: none) <text:introducao>
 
 
-
 #let resumo_conteudo = par[
+  O trabalho apresenta resultados computacionais e a fundamentação teórica de um simulador paralelo de alto desempenho escrito em Rust (_GraphTraffic-rs_) de tráfego de pacotes em redes complexas, com suporte a diferentes roteamentos (caminhos mínimos, passeio aleatório e visibilidade limitada), armazenamento eficiente de resultados em formato HDF5 
+  e performance suficiente para simulações de roteamento de mínimos caminhos com grafos na ordem de alguns milhares de nós em um computador doméstico. O problema do tráfego é visto como uma questão de otimização matemática em que se deseja ter um trafego eficiente (pouco atraso e alta geração crítica de mensagens) com mínima capacidade total, que esta relacionado diretamente com o custo de infraestrutura da rede.
+  É proposto um método local de atualização da capacidade das arestas baseado no histograma empírico do número de mensagens observados, a eficácia do método é avaliada em diferentes situações e alguns resultados analíticos são encontrados.
+  Diferentes modelos de grafos são analisados como Albert-Barabási, Erdős–Rényi, Watts-Strogatz e rede geométrica.
 ]
-
 
 //invariantes sobre a seção de resumo
 #word-count(wc => {
@@ -62,7 +64,7 @@ O presente trabalho realiza simulações de tráfego em redes complexas, com o o
 - *Simulador:* Implementar e validar um simulador de tráfego de pacotes de alto desempenho, capaz de modelar o envio de mensagens, filas de espera e diferentes estratégias de roteamento em grafos de média escala.
 - *Alocação de Capacidade:* Propor e testar heurísticas para a distribuição não uniforme das capacidades de transmissão ($C$) entre as arestas, visando a minimização da  capacidade total da rede, avaliando como essa adaptação afeta o Atraso Médio ($delta$) e a geração crítica de mensagens $(rho_c)$.
 - *Avaliação de Estratégias de Roteamento:* Comparar a eficiência das adaptações de capacidade propostas quando submetidas a diferentes algoritmos de roteamento, como Caminho Mínimo (_Shortest Path_) e estratégias de Visibilidade Limitada.
-- *Análise Topológica:* Investigar a relação entre métricas topológicas, como a Centralidade de Intermediação de Aresta ($b_e$)  e o tráfego resultante em diferentes redes como Erdos-Rényi, Barabási-Albert, redes em grade, etc.
+- *Análise Topológica:* Investigar a relação entre métricas topológicas, como a Centralidade de Intermediação de Aresta ($b_e$)  e o tráfego resultante em diferentes redes como Albert-Barabási, Erdős–Rényi, Watts-Strogatz e rede geométrica.
 
 
 = Tráfego de pacotes em redes complexas
@@ -115,15 +117,13 @@ A definição de $b_e$ foi escolhida com o fator de normalização para que uma 
 
 $ chevron.l L chevron.r = sum_(e in E) b_e $ <eq:sum_edge_betweeness>
 
-
-
 Modelos de trafego
 
-tipos de otimização possíveis
+Diferentes técnicas de otimizações são possíveis, sem ter a pretensão de ser exaustivo mas algumas são
 
-políticas de filas
-
-Roteamento dinamicos
+- Políticas de filas: O modelo padrão assume uma fila do tipo _First in First Out_ (FIFO), porém, outras políticas são possíveis usando prioridades arbitrarias, as quais podem ser "injustas" e atrasar pacotes individuais, mas que globalmente melhoram a eficiência da rede @wuInnovativePriorityQueueing2025
+- Roteamentos dinâmicos: Os roteamentos mencionados nesse trabalhos são todos estáticos, ou seja, independente da dinâmica do sistemas as mensagens possuem o mesmo comportamento de trafego, é possível utilizar roteamentos que por exemplo selecionam mínimos caminhos não de forma uniforme mas que minimizam o tamanho das filas das arestas intermediárias
+- Adição/Remoção de arestas: Uma forma de otimizar a rede pode consistir em realizar pequenas mudanças topologias adicionando ou até mesmo removendo arestas,
 
 
 = MATERIAIS E MÉTODOS
@@ -585,7 +585,7 @@ Um resultado interessante é que $k$ não necessariamente precisa ser próximo d
 
 
 #bibliography(
-  "bibliography/zotero.bib",
+  "../zotero.bib",
   title: [REFERÊNCIAS],
   style: "associacao-brasileira-de-normas-tecnicas",
   full: false,
