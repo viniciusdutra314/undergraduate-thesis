@@ -20,14 +20,14 @@ using CairoMakie
 using LaTeXStrings
 
 
-sampling_time = 100
-num_samplings = 200
-iterations = num_samplings * sampling_time
-rhos = range_logarithmic(start=1e-2, stop=0.2, length=20)
-free_flow_rate::Float64 = 0.99
-minimal_capacity::Int = 1
-multiplier::Float64 = 1
-hdf5_filename::String = "varying_message_generation_adapted_capacity"
+const sampling_time = 100
+const num_samplings = 200
+const iterations = num_samplings * sampling_time
+const rhos = range_logarithmic(start=1e-2, stop=0.2, length=20)
+const free_flow_rate::Float64 = 0.99
+const minimal_capacity::Int = 1
+const multiplier::Float64 = 1
+const hdf5_filename::String = "varying_message_generation_adapted_capacity"
 
 function generate_data()
     simulations::GraphTraffic.Schema.SimulationConfiguration = []
@@ -146,7 +146,5 @@ function plot()
     save_figure("p_critico_travel_adapted_capacity", fig_traveling_time)
     save_figure("p_critico_capacity_adapted_capacity", fig_capacity)
 end
-
-const main = make_cli(generate_data, plot)
 end
 

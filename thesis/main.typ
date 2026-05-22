@@ -30,10 +30,9 @@
 
 
 #let resumo_conteudo = par[
-  O trabalho apresenta resultados computacionais e a fundamentação teórica de um simulador paralelo de alto desempenho escrito em Rust (_GraphTraffic-rs_) de tráfego de pacotes em redes complexas, com suporte a diferentes roteamentos (caminhos mínimos, passeio aleatório e visibilidade limitada), armazenamento eficiente de resultados em formato HDF5
-  e performance suficiente para simulações de roteamento de mínimos caminhos com grafos na ordem de alguns milhares de nós em um computador doméstico. O problema do tráfego é visto como uma questão de otimização matemática em que se deseja ter um trafego eficiente (pouco atraso e alta geração crítica de mensagens) com mínima capacidade total, que esta relacionado diretamente com o custo de infraestrutura da rede.
-  É proposto um método local de atualização da capacidade das arestas baseado no histograma empírico do número de mensagens observados, a eficácia do método é avaliada em diferentes situações e alguns resultados analíticos são encontrados.
-  Diferentes modelos de grafos são analisados como Albert-Barabási, Erdős–Rényi, Watts-Strogatz e rede geométrica.
+  O trabalho apresenta resultados computacionais e a fundamentação teórica para o desenvolvimento de um simulador paralelo de alto desempenho escrito em Rust (_GraphTraffic-rs_) de tráfego de pacotes em redes complexas, com suporte a diferentes roteamentos (caminhos mínimos, passeio aleatório e visibilidade limitada), armazenamento eficiente de resultados em formato HDF5, performance suficiente para simulações de roteamento de mínimos caminhos com grafos na ordem de alguns milhares de nós em um computador doméstico e com corretude validada por alta cobertura de testes juntamente com a comparação com alguns resultados analíticos da litertura
+  . O problema do tráfego em redes é visto como uma questão de otimização matemática em que se deseja ter uma troca de mensagens eficiente (pouco atraso e alta taxa crítica de pacotes) com mínima capacidade total, que esta relacionado diretamente com o custo de infraestrutura da rede, diferentes modelos de grafos são analisados como Albert-Barabási, Erdős–Rényi, Watts-Strogatz e rede geométrica.
+  É proposto um método local de atualização da capacidade das arestas baseado no histograma empírico do número de mensagens observados, a eficácia do método é avaliada em diferentes situações.
 ]
 
 //invariantes sobre a seção de resumo
@@ -52,8 +51,6 @@
 
 
 Palavras-chave: Redes complexas. Teoria de Grafos. Otimização.
-
-
 
 
 = INTRODUÇÃO
@@ -189,6 +186,23 @@ Nesta formulação:
 
 Desta forma, $delta$ atua como um *parâmetro de ordem*: valores próximos de zero indicam um regime de *fluxo livre*, enquanto uma divergência em $delta$ sinaliza a fase de *congestionamento* da rede, onde o tempo de espera nas filas domina a dinâmica do sistema.
 
+== Intermediação e o número de mensagens <sec:intermediacao_x_numero_mensagens>
+
+Para um roteamento de mínimos caminhos, uma forma simples de prever quantas mensagens $M_e$ passam por uma aresta $e$, é através da sua intermediação, isso acontece pois a centralidade de intermediação mede a quantidade de mínimos caminhos que passam pela aresta, como o roteamento é por mínimos caminhos, essa grandeza mede diretamente o quanto é esperado de tráfego.
+
+Como a geração de mensagens é um conjunto de ensaios de Bernoulli para cada vértice, o número total de mensagens geradas segue uma distribuição binominal $B(N,rho)$, podemos estimar  #footnote[A demonstração formal da @eq:mensagem_estimada_e se encontra em @huangInvestigationBothLocal2009] $M_e$ como sendo:
+
+
+$
+  M_e ≃ sum_(s,t in V) underbrace(( B(N,rho))/(N(N-1)), #stack(dir: ttb, [Fração das mensagens geradas], [ com origem em $s$ e destino $t$])) times underbrace(sigma(s, t | e)/(sigma(s, t)), #stack(dir: ttb, [Fração dos caminhos mínimos ], [que passam por $e$]))=B(N,rho) times b_e
+$ <eq:mensagem_estimada_e>
+
+Outro resultado esperado dessa equação é que no caso em que $M_e>C_e$, a aresta $e$ entre em estado congestionado pois começa a receber mais mensagens do que consegue entregar, uma estimativa encontrada na literatura @chenTrafficDynamicsComplex2012 do $rho_c$ do grafo como um todo é considerar a geração mínima para que a primeira aresta  entre em congestionamento $rho_c approx min(C_e/(N b_e))$, para o caso de $C_e=1$ a formula se reduz a:
+$ rho_c approx 1/(N max(b_e)) $ <eq:estimativa_rho>
+
+
+Através dessa aproximação e utilizando a @eq:sum_edge_betweeness, chegamos em uma expressão da quantidade de mensagens que transitam na rede:
+$ sum_(e in E) M_e = B(N,rho) times chevron.l L chevron.r $ <eq:media_mensagens>
 
 == Seleção uniforme em $cal(W)_(s t)$ <sec:seleção_uniforme_w>
 
@@ -324,12 +338,8 @@ $
   P(p) = sigma_(v_(1)t) / sigma_(v_0 t) dot sigma_(v_(2) t) / sigma_(v_(1) t) dot dots dot sigma_(v_(k) t) / sigma_(v_(k-1) t) = sigma_( v_k t) / sigma_(v_0 t) = (sigma_(t t))/(sigma_(s t))=1/ (sigma_(s t))
 $
 
-== Centralidade de intermediação e número de mensagens
-
-
-
 == Modelos de Grafo
-
+a
 Diferentes algoritmos de geração de grafos servem como modelos de referência para a análise de redes complexas. Para fins de comparação e análise de desempenho em cenários de tráfego, foram selecionados os seguintes modelos:
 
 - *Erdős-Rényi $G(N, E)$:* Define-se como um grafo selecionado uniformemente a partir do conjunto de todos os grafos possíveis com $N$ vértices e $$ arestas. Estudado originalmente por #cite(<erdosEvolutionRandomGraphs2011>, form: "prose"), este modelo serve como controle estatístico para testar a hipótese nula de que propriedades na rede decorrem de uma topologia específica ou se são meramente fruto de conexões aleatórias.
@@ -380,16 +390,17 @@ Uma das vantagens desse método é por ele ser local, cada aresta só precisa de
 
 Todos os grafos comparados foram gerados com parâmetros de forma a não diferirem em mais do que 1% no número de nós e de arestas, a conectividade foi garantido pelo procedimento descrito na @section:procedimento_conectividade, isso estabelece uma comparação justa em um cenário que se queira uma rede eficiente dado $N$ nós e $M$ conexões entre eles
 
-== Sem adaptação <section:sem_adaptacao>
+== Sem adaptação das capacidades <section:sem_adaptacao>
 
+A @fig:rho_vs_atraso compara a eficiência dos 4 modelos de grafos escolhidos para a análise, a aferição automática do valor de $p_c$ pra cada grafo é difícil de ser feita computacionalmente, no entanto, visualmente é possível afirmar que:
 
-A @fig:rho_vs_atraso compara a eficiência dos 4 modelos de grafos escolhidos para a análise, a aferição exata do valor de $p_c$ pra cada grafo é difícil de ser feita pois os atrasos progressivamente vão aumentando sem demonstrar uma clara transição de fase, no entanto, visualmente é possível afirmar que:
 
 #{
   set text(size: 11.5pt)
   $ p_c ("Erdős–Rényi")>p_c ("Watts–Strogatz")>p_c ("Barabási–Albert")>p_c ("Rede Geométrica") $
 }
 
+A @fig:rho_vs_atraso mostras as estimativas como linha tracejadas (obtidas pela @eq:estimativa_rho), elas parecem serem mais precisas para grafos que possuem muitas arestas com intermediações altas, isso ocorre pois nesses grafos mais arestas possuem uma taxa de geração crítica próxima do valor da @eq:estimativa_rho, já no grafo de Erdős–Rényi que poucas arestas possuem $b_e>10^(-3)$, a estimativa foi bastante abaixo do observado.
 
 #let p_critico_df = csv("assets/tables/graph_stats.csv")
 
@@ -406,7 +417,7 @@ A @fig:rho_vs_atraso compara a eficiência dos 4 modelos de grafos escolhidos pa
 }
 
 #let table_p_critico_df = table(
-  columns: (1.5fr, 1fr, 1fr, 1fr, 1fr, 1fr),
+  columns: (1.6fr, 1fr, 1fr, 1fr, 1fr, 1fr),
   align: (left, center, center, center, center, center, center),
   table.hline(stroke: 1pt),
   table.header([*Grafo*], [*$N$*], [*$E$*], [*$d$*], [*$chevron.l L chevron.r$*], [*$C$*]),
@@ -427,13 +438,16 @@ A @fig:rho_vs_atraso compara a eficiência dos 4 modelos de grafos escolhidos pa
 #subpar.grid(
   figure(
     image("assets/plots/p_critico_delay.svg"),
-    caption: [Atraso médio ($delta$)],
+    caption: [Atraso médio ($delta$), as linhas pontilhadas \
+      são os valores estimados de $rho_c$],
   ),
   <fig-atraso>,
   figure(
     image("assets/plots/p_critico_travel.svg"),
-    caption: [Tempo médio de viagem],
+    caption: [Tempo médio de viagem, as linhas pontilhadas
+      são os valores estimados de $rho_c$],
   ),
+
   <fig-viagem>,
   columns: (1fr, 1fr),
   gutter: 10pt,
@@ -444,41 +458,46 @@ A @fig:rho_vs_atraso compara a eficiência dos 4 modelos de grafos escolhidos pa
   ],
   label: <fig:rho_vs_atraso>,
 )
+#v(20pt)
 
-A distância média da rede é um fator  importante na sua eficiência, no regime de baixa geração de mensagens $p_c approx 0$, mesmo que o atraso seja próximo de nulo para todos os grafos
-, o tempo médio de viagem dos pacotes é numericamente igual a $chevron.l L chevron.r$
+A @fig-viagem mostra que distância média da rede é um fator  importante na sua eficiência, no regime de baixa geração de mensagens $p_c approx 0$, mesmo que o atraso seja próximo de nulo para todos os grafos
+, o tempo médio de viagem dos pacotes é numericamente igual a $chevron.l L chevron.r$.
 
-Para um roteamento de mínimos caminhos, uma forma simples de prever quantas mensagens $M_e$ passam por uma aresta $e$ , é através da sua intermediação, como ilustra a @fig:intermediação_vs_mensagens existe uma relação linear entra ela e o número de mensagens, isso acontece pois a centralidade de intermediação mede a quantidade de mínimos caminhos que passam pela aresta, como o roteamento é por mínimos caminhos, essa grandeza mede diretamente o quanto é esperado de tráfego.
-
-Como a geração de mensagens é um conjunto de ensaios de Bernoulli para cada vértice, o número total de mensagens geradas segue uma distribuição binominal $B(N,rho)$, podemos estimar  #footnote[A demonstração completa formal da @eq:mensagem_estimada_e se encontra em @huangInvestigationBothLocal2009] $M_e$ como sendo:
-
-
-$
-  M_e ≃ sum_(s,t in V) underbrace(( B(N,rho))/(N(N-1)), #stack(dir: ttb, [Fração das mensagens geradas], [ com origem em $s$ e destino $t$])) times underbrace(sigma(s, t | e)/(sigma(s, t)), #stack(dir: ttb, [Fração dos caminhos mínimos ], [que passam por $e$]))=B(N,rho) times b_e
-$ <eq:mensagem_estimada_e>
+Afim de melhor entender as diferenças entres os grafos, na @fig:intermediação_vs_mensagens foi comparada a quantidade de mensagens recebidas em cada aresta em função da sua intermediação para um geração de mensagens fixa.
+É interessante observar como que para os grafos simulados a intermediação varia em cerca de 3 ordens de grandeza $b_e in [10^(-6),10^(-3)]$ , com a equação @eq:mensagem_estimada_e que estabele uma relação linear entre quantidade de mensagens e intermediação, isso demostra como certas arestas recebem muito mais mensagens do que outras, e portanto, são mais "importantes"
+estruturalmente do que outras.
 
 
 #let betweeness_vs_messages = csv(
   "assets/tables/betweeness_vs_messages.csv",
 )
 
+#let parse-sci-string(s) = {
+  let parts = s.split("e")
+  if parts.len() == 2 {
+    let base = float(parts.at(0))
+    let exponent = int(parts.at(1))
+    return base * calc.pow(10, exponent)
+  } else {
+    return float(s)
+  }
+}
 
 #let table_betweeness_vs_messages = table(
-  columns: (1fr, 1fr, 1.5fr),
+  columns: (1fr, 1fr, 1.3fr),
   align: (left, center, center, center),
   table.hline(stroke: 1pt),
   table.header([*Grafo*], [*$R^2$*], [*$alpha plus.minus Delta alpha$*]),
   table.hline(stroke: 0.5pt),
-  ..for (graph_name, R_squared, alpha, delta_alpha, _, _) in betweeness_vs_messages.slice(1) {
+  ..for (graph_name, R_squared, alpha, delta_alpha) in betweeness_vs_messages.slice(1) {
     (
       text(fill: topology_to_color.at(graph_name), stroke: 0.005em)[#graph_name],
-      round_num(R_squared, 2),
-      num(alpha + "+-" + delta_alpha, exponent: "sci"),
+      round_num(R_squared, 3),
+      num(str(parse-sci-string(alpha)) + "+-" + str(parse-sci-string(delta_alpha))),
     )
   },
   table.hline(stroke: 1pt),
 )
-
 
 #figure(
   stack(
@@ -487,17 +506,15 @@ $ <eq:mensagem_estimada_e>
     image("assets/plots/p_critico_betweeness.svg", width: 80%),
     box(width: 65%)[#table_betweeness_vs_messages],
   ),
-  caption: [Análise da correlação entre centralidade de intermediação de aresta e mensagens recebidas, $rho$ fixo em 0.1],
+  caption: [Análise da correlação entre centralidade de intermediação de aresta e mensagens recebidas, $rho$ fixo em 0.01],
 ) <fig:intermediação_vs_mensagens>
 
 
+Pela @eq:mensagem_estimada_e é esperado que o coeficiente linear da regressão intermediação por número de mensagens seja $B(N,rho)$, no caso particular simulado  em que $N=5000$ e $rho=0.01$, é esperado $alpha=50$, que é bem próximo do valor observado na da tabela da @fig:intermediação_vs_mensagens.
 
+Outra grandeza de interesse é a quantidade total de presentes na rede, a @eq:media_mensagens prevê uma relação linear com esse valor e a distância média, uma maneira de verificar essa equação é usar um modelo de grafo que se possa fixar $N,E,rho$ e variar $chevron.l L chevron.r$.
 
-Através dessa aproximação e utilizando a @eq:sum_edge_betweeness, chegamos em uma expressão da quantidade de mensagens que transitam na rede
-$ sum_(e in E) M_e = B(N,rho) times chevron.l L chevron.r $ <eq:media_mensagens>
-
-
-Um modelo de grafo que podemos variar a distância média fixando $N$ e $M$ é o modelo de Watts-Strogatz, com $beta approx 0$ (grafo regular) a distância é alta e é proporcional a $N$, já em $beta approx 1$ o modelo se aproxima de um grafo aleatório tendo $chevron.l L chevron.r$ baixo, para valores intermediários $0<beta<1$ é possível atingir redes de "mundo pequeno" em que $chevron.l L chevron.r$ é pequeno mas que $C$ é alto como ilusta a @fig:watts_strogatz_classico
+O modelo de Watts-Strogatz consegue fazer exatamente isso, com $beta approx 0$ (grafo regular) a distância é alta e é proporcional a $N$, já em $beta approx 1$ o modelo se aproxima de um grafo aleatório tendo $chevron.l L chevron.r$ baixo, para valores intermediários $0<beta<1$ é possível atingir redes de "mundo pequeno" em que $chevron.l L chevron.r$ é pequeno mas que $C$ é alto como ilusta a @fig:watts_strogatz_classico.
 
 
 #figure(
@@ -505,12 +522,11 @@ Um modelo de grafo que podemos variar a distância média fixando $N$ e $M$ é o
     "assets/plots/watts_classical_plot.svg",
     width: 50%,
   ),
-  caption: [Modelo de Watts-Strogatz $W S(3000, 6, beta)$ em gráfico análogo ao artigo original @wattsCollectiveDynamicsSmallworld1998, demonstrando a possibilidade de gerar grafos aleatórios com diferentes valores de $chevron.l L chevron.r$],
+  caption: [Modelo de Watts-Strogatz $W S(3000, 6, beta)$ em gráfico análogo ao artigo original de
+    #cite(<wattsCollectiveDynamicsSmallworld1998>, form: "prose"), demonstrando a possibilidade de gerar grafos aleatórios com diferentes valores de $chevron.l L chevron.r$],
 ) <fig:watts_strogatz_classico>
 
-Realizando simulações em grafos Watts-Strogatz com diferentes valores de $beta$, conseguentemente diferentes valores de $chevron.l L chevron.r$, se observa na @fig:watts_messages_vs_time uma concordância com o número de mensagens esperado com a média e o desvio padrão teóricos, o número de mensagens oscila entorno de uma média com uma amplitude de oscilação dentro do esperado pelo desvio padrão
-
-
+Realizando simulações em grafos Watts-Strogatz com diferentes valores de $beta$, conseguentemente diferentes valores de $chevron.l L chevron.r$, se observa na @fig:watts_messages_vs_time uma concordância com o número de mensagens esperado com a média e o desvio padrão teóricos, o número de mensagens oscila entorno de uma média com uma amplitude de oscilação dentro do esperado pelo desvio padrão.
 
 #figure(
   image(
@@ -521,21 +537,30 @@ Realizando simulações em grafos Watts-Strogatz com diferentes valores de $beta
     $chevron.l L chevron.r$, $mu$ é a média esperada de mensagens e  $sigma$ o desvio padrão esperado, ambos derivados da @eq:media_mensagens],
 ) <fig:watts_messages_vs_time>
 
+== Com adaptação das capacidades
+Os resultados obtidos na seção anterior (@section:sem_adaptacao) suponham que todos as aresta tinham capacidade unitaria constante no tempo, agora o método descrito na seção (@sec:adaptação_capacidade_elos) de adaptação das capacidades dada o tráfego será o usado, nos mesmos grafos e nas mesmas condições.
 
-== Com adaptação
-Os resultados obtidos na seção anterior (@section:sem_adaptacao) suponham que todos as aresta tinham capacidade unitaria constante no tempo, agora o método descrito na seção (@sec:adaptação_capacidade_elos) de adaptação das capacidades dada o tráfego será o usado, nos mesmos grafos e nas mesmas condições
+O modelo de rede geométrica foi desconsiderado nessa seção, pois os resultados anteriores demonstram o seu enorme $chevron.l L chevron.r$ e conseguemente ineficiência de tráfego em comparação aos outros modelos.
 
-
+A @fig:rho_vs_tempo_com_e_sem_adaptação compara a eficiência das três redes quando submeditdas a diferentes valores $rho$ e com/sem o método @sec:adaptação_capacidade_elos da adaptação da capacidade dos elos, se observa como o método mantem a rede no estado não congestionado mesmo para valores altos de $rho approx 0.2$.
 
 #figure(
   image("assets/plots/p_critico_travel_adapted_capacity.svg"),
   caption: [Comparação da eficiência das mesmas \
     redes com/sem adaptação da capacidades das arestas],
-)
+) <fig:rho_vs_tempo_com_e_sem_adaptação>
 
-#figure(
-  image("assets/plots/p_critico_capacity_adapted_capacity.svg"),
-)
+
+A @fig:rho_critico_custo mostra a capacidade total por aresta de cada rede e taxa de geração, esse valor está diretamente ligado com o custo da rede, é interessante ver que o custo não aumentou linearmente com o $rho_c$, o método com o dobro da capacidade conseguiu encontrar uma configuração que aumentou o $rho_c$ não somente pelo dobro.
+
+#align(center)[
+  #figure(
+    image("assets/plots/p_critico_capacity_adapted_capacity.svg"),
+    caption: [Custo da configuração de capacidades \
+      da rede para diferentes taxas de geração ],
+  ) <fig:rho_critico_custo>
+]
+
 
 == Diferentes roteamentos
 
@@ -585,7 +610,7 @@ Um resultado interessante é que $k$ não necessariamente precisa ser próximo d
 
 
 #bibliography(
-  "../zotero.bib",
+  "zotero.bib",
   title: [REFERÊNCIAS],
   style: "associacao-brasileira-de-normas-tecnicas",
   full: false,

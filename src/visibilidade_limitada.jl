@@ -4,7 +4,7 @@ using .GraphTraffic.Engine
 using .GraphTraffic.Schema
 using .GraphTraffic.Topology
 using .GraphTraffic.Analysis
-using .GraphTraffic.Style: topology_to_color
+using .GraphTraffic.Style
 using .GraphTraffic.SharedData
 using Graphs
 using UUIDs
@@ -14,14 +14,14 @@ using HDF5
 using NPZ
 
 
-iterations = 10_000
-N = 100
-sampling_time::Int = div(iterations, N)
-free_flow_rate::Float64 = 0.99
-minimal_capacity::Int = 1
-multiplier::Float64 = 1
-rho = 1e-3
-hdf5_filename = "visibilidade_limitada"
+const iterations = 10_000
+const N = 100
+const sampling_time::Int = div(iterations, N)
+const free_flow_rate::Float64 = 0.99
+const minimal_capacity::Int = 1
+const multiplier::Float64 = 1
+const rho = 1e-3
+const hdf5_filename = "visibilidade_limitada"
 
 β_to_grid_position = Dict(
     βs_watts[4] => (1, 1),
@@ -30,31 +30,16 @@ hdf5_filename = "visibilidade_limitada"
     βs_watts[1] => (2, 2)
 )
 
-function plot_correlations()
-    fig_correlations = Figure(size=(800, 800))
-    β_to_axis = Dict{Float64,Axis}()
-    for β in βs_watts
-        row, col = β_to_grid_position[β]
-        ax = Axis(fig_correlations[row, col],
-            xlabel="Visibilidade",
-            ylabel="Porcentagem (100%)",
-            yticks=0:10:100
-        )
-        ylims!(ax, 0, 100)
-        β_to_axis[β] = ax
-    end
-    open_raw_results(hdf5_filename, "r") do hfile
+function __preprocess_correlations()
+    df = open_raw_results(hdf5_filename, "r") do hfile
         edge_betweeness_dict = Dict{String,Vector{Float64}}()
         for graph_uuid in keys(hfile["graphs"])
             g = get_graph(hfile["graphs"][graph_uuid])
             edge_betweeness_dict[string(graph_uuid)] = edge_betweeness_normalized(g)
         end
 
-
         sims = hfile["simulations_results"]
-        visibility_by_β = Dict{Float64,Vector{Int64}}()
-        r_squared_by_β = Dict{Float64,Vector{Float64}}()
-        for sim in sims
+        data = map(sims) do sim
             json = get_json(sim)
             β = parse(Float64, json["graph_generation_info"]["graph_type"])
             visibility::Int64 = json["routing_method"]["limited_visibility"]
@@ -63,28 +48,44 @@ function plot_correlations()
             mean_capacity = mean(capacities_array, dims=2)
             betweeness = edge_betweeness_dict[get_graph_hdf5_uuid(sim)]
             valid_indices = findall(!=(1), mean_capacity)
-            if isempty(valid_indices)
-                continue
+
+            r_squared = if isempty(valid_indices)
+                NaN
+            else
+                cor(mean_capacity[valid_indices], betweeness[valid_indices])^2
             end
 
-            betweeness_capacity_R_squared = cor(mean_capacity[valid_indices], betweeness[valid_indices])^2
+            return (
+                β=β,
+                visibility=visibility,
+                r_squared=r_squared
+            )
+        end
+        return DataFrame(data)
+    end
+    return filter(row -> !isnan(row.r_squared), df)
+end
 
-            if !haskey(visibility_by_β, β)
-                visibility_by_β[β] = Int64[]
-                r_squared_by_β[β] = Float64[]
-            end
-            push!(visibility_by_β[β], visibility)
-            push!(r_squared_by_β[β], betweeness_capacity_R_squared)
-        end
-        for β in βs_watts
-            ax = β_to_axis[β]
-            scatter!(ax, visibility_by_β[β], 100 * r_squared_by_β[β],
-                label="Intermediação x capacidade",
-                color=:blue)
-        end
-        for ax in values(β_to_axis)
-            axislegend(ax, L"Correlações ($R^2$)", position=:lt)
-        end
+
+function __plot_correlations(df)
+    fig_correlations = Figure(size=(800, 800))
+    for β in βs_watts
+        row, col = β_to_grid_position[β]
+        ax = Axis(fig_correlations[row, col],
+            xlabel="Visibilidade",
+            ylabel="Porcentagem (100%)",
+            yticks=0:10:100
+        )
+        ylims!(ax, 0, 100)
+
+        sub_df = filter(r -> r.β == β, df)
+        sort!(sub_df, :visibility)
+
+        scatter!(ax, sub_df.visibility, 100 * sub_df.r_squared,
+            label="Intermediação x capacidade",
+            color=:blue)
+
+        axislegend(ax, L"Correlações ($R^2$)", position=:lt)
     end
 
     save_figure("visibilidade_limitada_correlations", fig_correlations)
@@ -92,7 +93,7 @@ function plot_correlations()
 end
 
 
-function plot_histograms()
+function __plot_histograms()
     distance_histograms = NPZ.npzread("raw_results/$(hdf5_filename)_distance_histograms.npz")
     avg_lengths = Dict{Float64,Float64}()
     for (graph_type, histogram) in distance_histograms
@@ -124,8 +125,9 @@ end
 
 
 function plot()
-    plot_correlations()
-    plot_histograms()
+    df = __preprocess_correlations()
+    __plot_correlations(df)
+    __plot_histograms()
 end
 
 function generate_data()
@@ -157,9 +159,6 @@ function generate_data()
     NPZ.npzwrite("raw_results/$(hdf5_filename)_distance_histograms.npz", distance_histograms)
     run_rust_cli(simulations, hdf5_filename, force_overwrite=true)
 end
-
-const main = make_cli(VisibilidadeLimitada.generate_data, VisibilidadeLimitada.plot)
-
 end
 
 

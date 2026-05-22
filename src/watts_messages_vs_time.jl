@@ -4,18 +4,18 @@ using .GraphTraffic.Engine
 using .GraphTraffic.Schema
 using .GraphTraffic.Topology
 using .GraphTraffic.Analysis
-using .GraphTraffic.Style: topology_to_color
+using .GraphTraffic.Style
 using Graphs
 using UUIDs
 using CairoMakie
 using Statistics
 using HDF5
-N = 3_000
-E = 9_000
-iterations = 1000
-rho = 1e-3
+const N = 3_000
+const E = 9_000
+const iterations = 1000
+const rho = 1e-3
 
-hdf5_filename = "watts_strogatz_varying_beta"
+const hdf5_filename = "watts_strogatz_varying_beta"
 
 function generate_data()
     βs_watts = [2.5e-3, 5e-3, 1e-2, 5e-2]
@@ -82,11 +82,6 @@ function plot()
         save_figure("watts_messages_vs_time", fig)
     end
 end
-main = make_cli(WattsStrogatzBetaVsLAndC.generate_data, WattsStrogatzBetaVsLAndC.plot)
-
 end
 
 
-if abspath(PROGRAM_FILE) == @__FILE__
-    WattsStrogatzBetaVsLAndC.main(ARGS)
-end

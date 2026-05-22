@@ -11,17 +11,6 @@ const EXPERIMENTS = (
     RhoVsAtrasoAdaptedCapacity
 )
 
-function usage()
-    println("Usage:")
-    println("  julia --project=@. recreate_all_tcc.jl <simulate_all|plot_all|simulate_and_plot_all>")
-    println()
-    println("Commands:")
-    println("  simulate_all            Run the simulations for all experiments")
-    println("  plot_all                Recreate the plots for all experiments")
-    println("  simulate_and_plot_all   Run simulations and plots for all experiments")
-end
-
-
 function run_experiments(mods; simulate::Bool=false, do_plot::Bool=false)
     total = length(mods)
     println("Experiments to run: $total")
@@ -46,38 +35,3 @@ function run_experiments(mods; simulate::Bool=false, do_plot::Bool=false)
     return nothing
 end
 
-
-function main(args::Vector{String}=ARGS)
-    if isempty(args)
-        usage()
-        return nothing
-    end
-
-    command = lowercase(args[1])
-    if command in ("help", "-h", "--help")
-        usage()
-        return nothing
-    end
-
-    simulate, do_plot = if command == "simulate_all"
-        true, false
-    elseif command == "plot_all"
-        false, true
-    elseif command == "simulate_and_plot_all"
-        true, true
-    else
-        error("Unknown command: $command")
-    end
-
-    println("Experiments:")
-    for mod in EXPERIMENTS
-        println("  - $(string(nameof(mod)))")
-    end
-
-    run_experiments(EXPERIMENTS; simulate=simulate, do_plot=do_plot)
-    return nothing
-end
-
-if abspath(PROGRAM_FILE) == @__FILE__
-    main()
-end

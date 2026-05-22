@@ -4,7 +4,7 @@ using .GraphTraffic.Engine
 using .GraphTraffic.Schema
 using .GraphTraffic.Topology
 using .GraphTraffic.Analysis
-using .GraphTraffic.Style: topology_to_color
+using .GraphTraffic.Style
 using .GraphTraffic.SharedData
 using JSON
 using LsqFit
@@ -20,9 +20,10 @@ using CairoMakie
 using LaTeXStrings
 
 
-iterations = 1000
-rhos = range_logarithmic(start=1e-3, stop=1.0, length=100)
-hdf5_filename::String = "varying_message_generation"
+const iterations = 1_000
+const rhos = range_logarithmic(start=1e-3, stop=1.0, length=100)
+const rho_for_betweeness = 1e-2
+const hdf5_filename::String = "varying_message_generation"
 
 function generate_data()
     simulations::GraphTraffic.Schema.SimulationConfiguration = []
@@ -48,8 +49,7 @@ function generate_data()
                 message_generation=rho,
                 max_iterations=iterations,
                 graph_generation_info=Dict("graph_type" => graph_type),
-                modifiers=Vector{GraphTraffic.Schema.ModifiersUnion}(),
-                observers=GraphTraffic.Schema.ObserversUnion[ObserverEdgeQueue("ObserverEdgeQueue"), ObserverEdgeCapacity("ObserverEdgeCapacity", iterations - 1)]
+                observers=[ObserverEdgeQueue(), ObserverEdgeCapacity(iterations - 1)]
             ))
         end
     end
@@ -72,122 +72,179 @@ function generate_data()
 end
 
 
-function plot_p_vs_mensagens()
+function __preprocess_data()
     open_raw_results(hdf5_filename, "r") do hfile
-        fig_delay = Figure()
-        fig_travel = Figure()
-        fig_free_flow = Figure()
-        ax_free_flow = Axis(fig_free_flow[1, 1],
-            xlabel=L"Geração de mensagens ($\rho$)",
-            ylabel="Fluxo livre",
-            xscale=log10,
-            yscale=log10,
-            xlabelsize=18,
-            ylabelsize=18
-        )
-
-        ax_delay = Axis(fig_delay[1, 1],
-            xlabel=L"Geração de mensagens ($\rho$)",
-            ylabel=L"Atraso médio ($\delta$)",
-            xscale=log10,
-            yscale=log10,
-            xlabelsize=18,
-            ylabelsize=18
-        )
-        ax_travel = Axis(fig_travel[1, 1],
-            xlabel=L"Geração de mensagens ($\rho$)",
-            ylabel="Tempo médio de viagem",
-            xscale=log10,
-            yscale=log10,
-            xlabelsize=18,
-            ylabelsize=18
-        )
-
         sim_results = hfile["simulations_results"]
-
-        plotted::Set{String} = Set{String}()
-        for sim_result in sim_results
+        data = map(sim_results) do sim_result
             json_config = get_json(sim_result)
-            msg_generation::Float64 = json_config.message_generation
-            graph_type::String = json_config.graph_generation_info["graph_type"]
-            label = (graph_type in plotted) ? nothing : graph_type
-            free_flow_rates = sim_result["free_flow_rates"]["999"][:]
-            free_flow_rates_avg::Float64 = Statistics.mean(free_flow_rates)
-            scatter!(ax_delay, msg_generation, get_avg_delay(sim_result),
-                color=topology_to_color[graph_type], label=label)
-            scatter!(ax_travel, msg_generation, get_avg_traveling_time(sim_result),
-                color=topology_to_color[graph_type], label=label)
-            scatter!(ax_free_flow, msg_generation, free_flow_rates_avg,
-                color=topology_to_color[graph_type], label=label)
-            push!(plotted, graph_type)
+            free_flow_rates = sim_result["free_flow_rates"][string(iterations - 1)][:]
+            return (
+                msg_generation=Float64(json_config.message_generation),
+                graph_type=String(json_config.graph_generation_info["graph_type"]),
+                avg_delay=get_avg_delay(sim_result),
+                avg_traveling_time=get_avg_traveling_time(sim_result),
+                avg_free_flow=Statistics.mean(free_flow_rates)
+            )
         end
-        axislegend(ax_delay, position=:lt)
-        axislegend(ax_travel, position=:lt)
-        axislegend(ax_free_flow, position=:lt)
-        save_figure("p_critico_delay", fig_delay)
-        save_figure("p_critico_travel", fig_travel)
-        save_figure("p_critico_free_flow", fig_free_flow)
+        df = DataFrame(data)
+        sort!(df, :graph_type)
+        return df
     end
 end
 
 
+function __plot_rho_vs_efficiency(df_efficiency, df_rho_critico_estimado)
+    size = (500, 500)
+    fig_delay = Figure(size=size)
+    fig_travel = Figure(size=size)
+    fig_free_flow = Figure(size=size)
+    ax_free_flow = Axis(fig_free_flow[1, 1];
+        xlabel=L"Geração de mensagens ($\rho$)",
+        ylabel="Fluxo livre médio (100%)",
+        xscale=log10,
+        yminorgridcolor=:gray85,
+        yminorgridvisible=true,
+        yminorticks=IntervalsBetween(9),)
+    ylims!(ax_free_flow, 0, 110)
+    ax_delay = Axis(fig_delay[1, 1];
+        xlabel=L"Geração de mensagens ($\rho$)",
+        ylabel=L"Atraso médio ($\delta$)",
+        xscale=log10,
+        yscale=log10,
+    )
+    ax_travel = Axis(fig_travel[1, 1];
+        xlabel=L"Geração de mensagens ($\rho$)",
+        ylabel="Tempo médio de viagem",
+        xscale=log10,
+        yscale=log10,
+    )
 
-function plot_betweeness_vs_messages()
+    for (g_type, sub_df) in pairs(groupby(df_efficiency, :graph_type))
+        color = topology_to_color[g_type.graph_type]
+        scatter!(ax_delay, sub_df.msg_generation, sub_df.avg_delay,
+            color=color, label=g_type.graph_type)
+        scatter!(ax_travel, sub_df.msg_generation, sub_df.avg_traveling_time,
+            color=color, label=g_type.graph_type)
+        scatter!(ax_free_flow, sub_df.msg_generation, 100 .* sub_df.avg_free_flow,
+            color=color, label=g_type.graph_type)
+        vlines!(ax_delay, df_rho_critico_estimado[df_rho_critico_estimado.graph_type.==g_type.graph_type, :rho_critico_estimado],
+            color=color, linestyle=:dash, linewidth=3, alpha=0.7)
+        vlines!(ax_travel, df_rho_critico_estimado[df_rho_critico_estimado.graph_type.==g_type.graph_type, :rho_critico_estimado],
+            color=color, linestyle=:dash, linewidth=3, alpha=0.7)
+    end
+
+    Legend(fig_delay[0, 1], ax_delay,
+        orientation=:horizontal,
+        nbanks=2,
+        tellwidth=false,
+        tellheight=true,
+        labelsize=14,
+        framevisible=true
+    )
+
+    Legend(fig_travel[0, 1], ax_travel,
+        orientation=:horizontal,
+        nbanks=2,
+        tellwidth=false,
+        tellheight=true,
+        labelsize=14)
+    Legend(fig_free_flow[0, 1], ax_free_flow,
+        orientation=:horizontal,
+        nbanks=2,
+        tellwidth=false,
+        tellheight=true,
+        labelsize=14)
+
+    save_figure("p_critico_delay", fig_delay)
+    save_figure("p_critico_travel", fig_travel)
+    save_figure("p_critico_free_flow", fig_free_flow)
+end
+
+
+
+function __preprocess_betweeness_data()
     open_raw_results(hdf5_filename, "r") do hfile
         simulations = hfile["simulations_results"]
-        rho = argmin(x -> abs(x - 1e-2), rhos)
-        sims_uuid::Matrix{String} = reshape(
-            filter(sim -> get_json(simulations[sim]).message_generation == rho, keys(simulations)),
-            (2, 2))
-        fig = Figure()
+        rho_val = argmin(x -> abs(x - rho_for_betweeness), rhos)
+        target_keys = filter(sim -> get_json(simulations[sim]).message_generation == rho_val, keys(simulations))
 
-        df = DataFrame(graph_type=String[], R_squared=Float64[], α=Float64[], Δα=Float64[], β=Float64[], Δβ=Float64[])
-        for row in 1:2
-            for col in 1:2
-                sim = hfile["simulations_results"][sims_uuid[row, col]]
-                messages = [x.total_num_messages_processed for x in sim["edges_attributes"][:]]
-                betweeness = hfile["graphs"][get_graph_hdf5_uuid(sim)]["edge_betweeness"][:]
-                valid_idx = (messages .> 0) .& (betweeness .> 0)
-                m_filtered = messages[valid_idx]
-                b_filtered = betweeness[valid_idx]
-                y_lims = (minimum(m_filtered) * 0.9, maximum(m_filtered) * 1.15)
-                x_lims = (minimum(b_filtered) * 0.9, maximum(b_filtered) * 1.15)
+        data = map(target_keys) do sim_key
+            sim = simulations[sim_key]
+            messages = [x.total_num_messages_processed for x in sim["edges_attributes"][:]]
+            betweeness = hfile["graphs"][get_graph_hdf5_uuid(sim)]["edge_betweeness"][:]
+            graph_type = get_json(sim).graph_generation_info["graph_type"]
 
-                ax = Axis(fig[row, col],
-                    xlabel=L"Centralidade de intermediação ($b_e$)",
-                    ylabel="Mensagens",
-                    xscale=log10,
-                    yscale=log10,
-                    limits=(x_lims, y_lims)
-                )
-                scatter!(ax, betweeness, messages, alpha=0.2, color=topology_to_color[get_json(sim).graph_generation_info["graph_type"]])
-                fit = LsqFit.curve_fit((x, p) -> p[1] .* x .+ p[2], betweeness, messages, [1.0, 1.0])
-                errors = LsqFit.stderror(fit)
-                push!(df, (
-                    graph_type=get_json(sim).graph_generation_info["graph_type"],
-                    R_squared=Statistics.cor(m_filtered, b_filtered)^2,
-                    α=fit.param[1],
-                    Δα=errors[1],
-                    β=fit.param[2],
-                    Δβ=errors[2]
-                )
-                )
-            end
+            valid_idx = (messages .> 5e1)
+            m_filtered = messages[valid_idx]
+            b_filtered = betweeness[valid_idx]
+
+            fit = LsqFit.curve_fit((x, p) -> p[1] .* x, b_filtered, m_filtered ./ iterations, [1.0])
+            errors = LsqFit.stderror(fit)
+
+            return (
+                graph_type=graph_type,
+                messages=messages,
+                betweeness=betweeness,
+                R_squared=Statistics.cor(m_filtered, b_filtered)^2,
+                α=fit.param[1],
+                Δα=errors[1],
+            )
         end
-        save_dataframe_to_csv(df, "betweeness_vs_messages")
-        save_figure("p_critico_betweeness", fig)
+        return DataFrame(data)
     end
 end
 
+
+function __plot_betweeness_vs_messages(df)
+    fig = Figure(size=(700, 700))
+    sort!(df, :graph_type)
+    axes = []
+    for (i, row_data) in enumerate(eachrow(df))
+        row = (i - 1) ÷ 2 + 1
+        col = (i - 1) % 2 + 1
+
+        messages = row_data.messages
+        betweeness = row_data.betweeness
+        valid_idx = (messages .> 0) .& (betweeness .> 0)
+        m_filtered = messages[valid_idx]
+        b_filtered = betweeness[valid_idx]
+
+        y_lims = (minimum(m_filtered) * 0.9, maximum(m_filtered) * 1.15)
+        x_lims = (minimum(b_filtered) * 0.9, maximum(b_filtered) * 1.15)
+
+        ax = Axis(fig[row, col];
+            xlabel=L"Centralidade de intermediação ($b_e$)",
+            ylabel="Mensagens",
+            limits=(x_lims, y_lims),
+            log_x_log_y_style...
+        )
+        push!(axes, ax)
+
+        scatter!(ax, betweeness, messages, alpha=0.2,
+            color=topology_to_color[row_data.graph_type], label=row_data.graph_type)
+
+        axislegend(ax, position=:lt)
+    end
+    linkyaxes!(axes[1], axes[2:end]...)
+    linkxaxes!(axes[1], axes[2:end]...)
+    stats_df = select(df, Not([:messages, :betweeness]))
+    save_dataframe_to_csv(stats_df, "betweeness_vs_messages")
+    save_figure("p_critico_betweeness", fig)
+    return fig
+end
+
+
 function plot()
-    plot_betweeness_vs_messages()
-    plot_p_vs_mensagens()
+    df_efficiency = __preprocess_data()
+    df_betweeness = __preprocess_betweeness_data()
+    df_rho_critico_estimado = DataFrame(graph_type=String[], rho_critico_estimado=Float64[])
+    N = GraphTraffic.SharedData.N
+    for row in eachrow(df_betweeness)
+        rho_critico_estimado = 1 / (N * maximum(row.betweeness))
+        push!(df_rho_critico_estimado, (graph_type=row.graph_type, rho_critico_estimado=rho_critico_estimado))
+    end
+    __plot_betweeness_vs_messages(df_betweeness)
+    __plot_rho_vs_efficiency(df_efficiency, df_rho_critico_estimado)
+end
 end
 
-const main = make_cli(generate_data, plot)
-end
-
-
-if abspath(PROGRAM_FILE) == @__FILE__
-    RhoVsAtraso.main(ARGS)
-end

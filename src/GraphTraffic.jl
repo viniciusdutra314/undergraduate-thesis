@@ -128,33 +128,9 @@ using ..Schema: SimulationConfiguration
 using JSON
 using HDF5
 
-export run_rust_cli, raw_results_folder, make_cli, open_raw_results
+export run_rust_cli, raw_results_folder, open_raw_results
 
 const raw_results_folder = normpath(@__DIR__, "..", "raw_results")
-
-function make_cli(generate_data::Function, plot::Function)
-    function main(args::Vector{String}=String[])
-        if isempty(args)
-            println("Usage: julia code.jl [simulate|plot|all]")
-            return
-        end
-        cmd = lowercase(args[1])
-        if cmd == "simulate"
-            generate_data()
-        elseif cmd == "plot"
-            plot()
-        elseif cmd == "all"
-            generate_data()
-            plot()
-        elseif cmd == "help" || cmd == "--help" || cmd == "-h"
-            println("Usage: julia code.jl [simulate|plot|all]")
-        else
-            error("Unknown command: $cmd")
-        end
-    end
-
-    return main
-end
 
 function run_rust_cli(config::SimulationConfiguration, filename::String; num_threads::Union{Integer,Nothing}=nothing,
     force_overwrite::Bool=false)
@@ -313,13 +289,12 @@ function edge_betweeness_normalized(g::SimpleGraph)::Vector{Float64}
     converted_graph::IGraphs.IGraph = IGraphs.IGraph(g)
     IGraphs.LibIGraph.igraph_edge_betweenness(converted_graph.objref, C_NULL, result,
         IGraphs.LibIGraph.igraph_ess_all(IGraphs.LibIGraph.IGRAPH_EDGEORDER_ID),
-        false, false)
+        false, true)
     result_vec = Vector{Float64}(undef, Graphs.ne(g))
     for i in 1:Graphs.ne(g)
         result_vec[i] = IGraphs.LibIGraph.igraph_vector_get(result, i - 1)
     end
-    N = Graphs.ne(g)
-    return result_vec ./ (N * (N - 1))
+    return result_vec
 end
 
 end
@@ -350,8 +325,6 @@ rgg_name = "Rede Geométrica"
 watts_name = "Watts–Strogatz"
 
 end
-
-
 
 
 module Analysis
