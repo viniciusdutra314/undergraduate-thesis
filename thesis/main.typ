@@ -30,7 +30,7 @@
 
 
 #let resumo_conteudo = par[
-  O trabalho apresenta resultados computacionais e a fundamentação teórica na criação de um simulador de tráfego de pacotes em redes complexas de alto desempenho escrito em Rust (_GraphTraffic-rs_), com suporte a diferentes roteamentos (caminhos mínimos, passeio aleatório e visibilidade limitada), armazenamento eficiente de resultados em formato HDF5, performance suficiente para simulações de roteamento de mínimos caminhos com grafos na ordem de alguns milhares de nós em um computador doméstico e com corretude validada por alta cobertura de testes juntamente com a comparação com alguns resultados analíticos da litertura
+  O trabalho apresenta resultados computacionais e a fundamentação teórica na criação de um simulador de tráfego de pacotes em redes complexas de alto desempenho escrito em Rust (_GraphTraffic-rs_), com suporte a diferentes roteamentos (caminhos mínimos, passeio aleatório e visibilidade limitada), armazenamento eficiente de resultados em formato HDF5, performance suficiente para simulações de roteamento de mínimos caminhos com grafos na ordem de alguns milhares de nós em um computador doméstico, corretude validada por alta cobertura de testes juntamente com a comparação com alguns resultados analíticos da literatura
   . O problema do tráfego em redes é visto como uma questão de otimização matemática em que se deseja ter uma troca de mensagens eficiente (pouco atraso e alta taxa crítica de pacotes) com mínima capacidade total, que esta relacionado diretamente com o custo de infraestrutura da rede, diferentes modelos de grafos são analisados como Albert-Barabási, Erdős–Rényi, Watts-Strogatz e rede geométrica.
   É proposto um método local de atualização da capacidade das arestas baseado no histograma empírico do número de mensagens observados, a eficácia do método é avaliada em diferentes situações.
 ]
@@ -117,8 +117,8 @@ Diferentes algoritmos de geração de grafos servem como modelos de referência 
 
 - *Erdős-Rényi $G(N, E)$:* Define-se como um grafo selecionado uniformemente a partir do conjunto de todos os grafos possíveis com $N$ vértices e $E$ arestas. Estudado originalmente por #cite(<erdosEvolutionRandomGraphs2011>, form: "prose"), este modelo serve como controle estatístico para testar a hipótese nula de que propriedades na rede decorrem de uma topologia específica ou se são meramente fruto de conexões aleatórias.
 
-- *Grafo Geométrico Aleatório $G G A(n, r)$*: Neste modelo, os $n$ nós são distribuídos aleatoriamente em um espaço euclidiano,  uma aresta é estabelecida entre dois nós se, e somente se, a distância euclidiana entre eles for inferior a um raio de corte $r$. Proposta originalmente por #cite(<gilbertRandomPlaneNetworks1961>,form:"prose") esse modelo é usado para estudar redes de comunicação com distâncias limitadas ou até mesmo doenças infeciosas.
- 
+- *Grafo Geométrico Aleatório $G G A(n, r)$*: Neste modelo, os $n$ nós são distribuídos aleatoriamente em um espaço euclidiano,  uma aresta é estabelecida entre dois nós se, e somente se, a distância euclidiana entre eles for inferior a um raio de corte $r$. Proposta originalmente por #cite(<gilbertRandomPlaneNetworks1961>, form: "prose") esse modelo é usado para estudar redes de comunicação com distâncias limitadas ou até mesmo doenças infeciosas.
+
 - *Watts–Strogatz $W S(n, K, beta)$*: Modelo proposto por #cite(<wattsCollectiveDynamicsSmallworld1998>, form: "prose") para modelar o fenômeno de "mundo pequeno" em que redes exibem simultaneamente alto coeficiente de agrupamento e distâncias médias pequenas. O modelo inicia com um grafo regular onde cada nó está conectado aos seus $K$ vizinhos mais próximos, cada aresta é então rearranjada com probabilidade $beta$ para um nó escolhido aleatoriamente.
 
 - *Barabási-Albert $B A(N, m)$:* Caracteriza-se por um processo de crescimento dinâmico que incorpora o mecanismo de ligação preferencial. O algoritmo inicia-se com um grafo de $m_0$ nós e, a cada iteração, um novo nó é adicionado com $m$ arestas ($m <= m_0$). A probabilidade $Pi$ de que o novo nó se conecte a um nó $i$ existente é proporcional ao seu grau $k_i$, conforme a relação:
@@ -557,11 +557,11 @@ A @fig:rho_critico_custo mostra a capacidade total por aresta de cada rede e tax
 
 #align(center)[
   #box(width: 50%)[
-  #figure(
-    image("assets/plots/p_critico_capacity_adapted_capacity.svg"),
-    caption: [Custo da configuração de capacidades \
-      da rede para diferentes taxas de geração ],
-  ) <fig:rho_critico_custo>]
+    #figure(
+      image("assets/plots/p_critico_capacity_adapted_capacity.svg"),
+      caption: [Custo da configuração de capacidades \
+        da rede para diferentes taxas de geração ],
+    ) <fig:rho_critico_custo>]
 ]
 
 
@@ -592,7 +592,7 @@ Porém, na prática nem sempre é possível que todos os nós tenham informaçã
 #v(10pt)
 
 
-Para gerar grafos com diferentes valores de diâmetro e distribuição de distâncias, o mesmo método da @fig:watts_strogatz_classico de utilizar diferentes valores de $beta$ no modelo de Watts-Strogatz será usado, como ilustrado na @fig:visibilidade_limitada_grid. Os histogramas deixam claro porque  $chevron.l L chevron.r$ sozinho não é suficiente para descrever toda a dinâmica de roteamento, a variança dos histogramas É=é alta, tornando a média por si só insuficiente para descrever a dinâmica.
+Para gerar grafos com diferentes valores de diâmetro e distribuição de distâncias, o mesmo método da @fig:watts_strogatz_classico de utilizar diferentes valores de $beta$ no modelo de Watts-Strogatz será usado, como ilustrado na @fig:visibilidade_limitada_grid. Os histogramas deixam claro porque  $chevron.l L chevron.r$ sozinho não é suficiente para descrever toda a dinâmica de roteamento, a variança dos histogramas é alta, tornando a média por si só insuficiente para descrever a dinâmica.
 
 #figure(
   align(center)[
@@ -610,7 +610,15 @@ Um resultado interessante é que $k$ não necessariamente precisa ser próximo d
 
 = CONCLUSÕES E CONSIDERAÇÕES FINAIS
 
+Neste trabalho, compararam-se alguns resultados teóricos referentes à quantidade total de mensagens (@eq:media_mensagens) na rede e também por aresta (@eq:mensagem_estimada_e) com o simulador desenvolvido (_GraphTraffic-rs_). Tais resultados provaram-se verdadeiros, mesmo que originalmente pensados para um modelo de tráfego com os vértices tendo uma capacidade $C$, e não as arestas, como foi usado neste trabalho. A simples mudança teórica da intermediação de um vértice para a menos conhecida intermediação de aresta provou-se suficiente.
 
+Dos quatro modelos de redes testadas, o modelo de grafo geométrico aleatório provou-se muito ineficiente, com uma taxa crítica de mensagens $rho_c$ cerca de uma a duas ordens de grandeza menor quando comparada com os demais, evidenciando como a topologia influencia no tráfego, mesmo que os grafos testados tenham aproximadamente o mesmo número de nós $N$ e arestas $E$.
+
+Grandezas como a centralidade de intermediação de aresta e a distância média demonstraram ser fortes preditores da eficiência de uma rede. Baixos valores de distância média e de intermediação de arestas caracterizam grafos ideais para a troca de pacotes.
+
+A heurística proposta para a alocação não uniforme de capacidades das arestas, baseada no histograma empírico do número de mensagens, mostrou-se eficaz em aumentar a geração crítica e reduzir atrasos. As capacidades alocadas correlacionam-se com a intermediação de aresta, mesmo que o método não exija explicitamente esse cálculo, mostrando que, utilizando somente informações locais, pode-se obter resultados para os quais, a princípio, seriam necessárias informações globais da rede.
+
+Como sugestões para trabalhos futuros, recomendam-se um estudo teórico mais aprofundado da heurística de adaptação das capacidades das arestas, analisando como o tempo de amostragem $T$ e o _FFR_ influenciam na otimização final. 
 
 #bibliography(
   "zotero.bib",
