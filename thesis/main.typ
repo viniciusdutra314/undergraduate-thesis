@@ -30,7 +30,7 @@
 
 
 #let resumo_conteudo = par[
-  O trabalho apresenta resultados computacionais e a fundamentação teórica para o desenvolvimento de um simulador paralelo de alto desempenho escrito em Rust (_GraphTraffic-rs_) de tráfego de pacotes em redes complexas, com suporte a diferentes roteamentos (caminhos mínimos, passeio aleatório e visibilidade limitada), armazenamento eficiente de resultados em formato HDF5, performance suficiente para simulações de roteamento de mínimos caminhos com grafos na ordem de alguns milhares de nós em um computador doméstico e com corretude validada por alta cobertura de testes juntamente com a comparação com alguns resultados analíticos da litertura
+  O trabalho apresenta resultados computacionais e a fundamentação teórica na criação de um simulador de tráfego de pacotes em redes complexas de alto desempenho escrito em Rust (_GraphTraffic-rs_), com suporte a diferentes roteamentos (caminhos mínimos, passeio aleatório e visibilidade limitada), armazenamento eficiente de resultados em formato HDF5, performance suficiente para simulações de roteamento de mínimos caminhos com grafos na ordem de alguns milhares de nós em um computador doméstico e com corretude validada por alta cobertura de testes juntamente com a comparação com alguns resultados analíticos da litertura
   . O problema do tráfego em redes é visto como uma questão de otimização matemática em que se deseja ter uma troca de mensagens eficiente (pouco atraso e alta taxa crítica de pacotes) com mínima capacidade total, que esta relacionado diretamente com o custo de infraestrutura da rede, diferentes modelos de grafos são analisados como Albert-Barabási, Erdős–Rényi, Watts-Strogatz e rede geométrica.
   É proposto um método local de atualização da capacidade das arestas baseado no histograma empírico do número de mensagens observados, a eficácia do método é avaliada em diferentes situações.
 ]
@@ -54,79 +54,68 @@ Palavras-chave: Redes complexas. Teoria de Grafos. Otimização.
 
 
 = INTRODUÇÃO
-A análise de redes complexas viabiliza a modelagem de sistemas heterogêneos sob a fundamentação matemática da teoria dos grafos. As aplicações abrangem desde o planejamento urbano e o estudo de tráfego baseados em grafos geométricos @boeingModelingAnalyzingUrban2025, até a computação quântica @javadi-abhariQuantumComputingQiskit2024, na otimização do mapeamento de algoritmos em circuitos físicos.
+O estudo de redes complexas viabiliza a modelagem de sistemas heterogêneos sob a fundamentação matemática da teoria dos grafos. As aplicações abrangem desde o planejamento urbano pela análise de tráfego em grafos geométricos @boeingModelingAnalyzingUrban2025, até a computação quântica @javadi-abhariQuantumComputingQiskit2024, na otimização do mapeamento de algoritmos em circuitos físicos.
 
 O presente trabalho realiza simulações de tráfego em redes complexas, com o objetivo de investigar e propor estratégias de otimização no fluxo de pacotes para diversas topologias e protocolos de roteamento. Essa otimização é feita por meio da modificação da capacidade de transmissão dos elos da rede, com o intuito de maximizar a taxa crítica de geração de pacotes ($rho_c$) e minimizar o atraso dos pacotes.
 
 - *Simulador:* Implementar e validar um simulador de tráfego de pacotes de alto desempenho, capaz de modelar o envio de mensagens, filas de espera e diferentes estratégias de roteamento em grafos de média escala.
-- *Alocação de Capacidade:* Propor e testar heurísticas para a distribuição não uniforme das capacidades de transmissão ($C$) entre as arestas, visando a minimização da  capacidade total da rede, avaliando como essa adaptação afeta o Atraso Médio ($delta$) e a geração crítica de mensagens $(rho_c)$.
-- *Avaliação de Estratégias de Roteamento:* Comparar a eficiência das adaptações de capacidade propostas quando submetidas a diferentes algoritmos de roteamento, como Caminho Mínimo (_Shortest Path_) e estratégias de Visibilidade Limitada.
-- *Análise Topológica:* Investigar a relação entre métricas topológicas, como a Centralidade de Intermediação de Aresta ($b_e$)  e o tráfego resultante em diferentes redes como Albert-Barabási, Erdős–Rényi, Watts-Strogatz e rede geométrica.
+- *Alocação de Capacidade:* Propor e testar uma heurística para a distribuição não uniforme das capacidades de transmissão ($C$) entre as arestas, visando a minimização da  capacidade total da rede, avaliando como essa adaptação afeta o Atraso Médio ($delta$) e a geração crítica de mensagens $(rho_c)$.
+- *Avaliação de Estratégias de Roteamento:* Comparar a eficiência da adaptação das capacidades quando submetida a diferentes algoritmos de roteamento, como Caminho Mínimo e estratégias de Visibilidade Limitada.
+- *Análise Topológica:* Investigar a relação entre métricas topológicas, como a Centralidade de Intermediação de Aresta ($b_e$)  e o tráfego resultante em diferentes redes como Albert-Barabási, Erdős–Rényi, Watts-Strogatz e Rede Geométrica Aleatória.
 
 
 = Tráfego de pacotes em redes complexas
 
 == Tipos de grafos
 
-#let definição_grafo = [
-  Embora existam variações terminológicas  na literatura, define-se um grafo $G$ como um par ordenado $G = (V, E)$, onde $V$ representa um conjunto finito e não vazio de elementos denominados *vértices*, enquanto $E$ consiste em um conjunto de pares não ordenados de elementos pertencentes a $V$, denominados *arestas* @trudeauIntroductionGraphTheory1993.
-]
-#definição_grafo
+Embora existam variações terminológicas  na literatura, define-se um grafo $G$ como um par ordenado $G = (V, E)$, onde $V$ representa um conjunto finito e não vazio de elementos denominados *vértices*, enquanto $E$ consiste em um conjunto de pares não ordenados de elementos pertencentes a $V$, denominados *arestas* @trudeauIntroductionGraphTheory1993.
 
-#let definição_digrafo = [
-  Um *grafo dirigido*, ou simplesmente *dígrafo*, caracteriza-se por um conjunto $E$ composto por pares ordenados de vértices de $V$. Diferente dos grafos não direcionados, a relação de adjacência em um dígrafo implica que $(u, v) != (v, u)$, estabelecendo uma orientação específica para a conexão entre os nós.
-]
-#definição_digrafo
 
-#let definição_grafo_ponderado = [
-  Um *grafo ponderado* é definido pela associação de uma função peso $w: E -> RR$, que atribui a cada aresta um valor escalar real. No contexto de tráfego, tal grandeza frequentemente representa o custo, a capacidade ou a "intensidade" da conexão entre dois pontos.
-]
+Um *grafo dirigido*, ou simplesmente *digrafo*, caracteriza-se por um conjunto $E$ composto por pares ordenados de vértices de $V$. Diferente dos grafos não direcionados, a relação de adjacência em um digrafo implica que $(u, v) != (v, u)$, estabelecendo uma orientação específica para a conexão entre os nós.
 
-#definição_grafo_ponderado
+Um *grafo ponderado* é definido pela associação de uma função peso $w: E -> RR$, que atribui a cada aresta um valor escalar real. No contexto de tráfego, tal grandeza frequentemente representa o custo, a capacidade ou a "intensidade" da conexão entre dois pontos.
 
 Neste trabalho, salvo indicação contrária, o termo "grafo" se refere a um grafo não direcionado e não ponderado. Quaisquer variações a essa definição padrão serão explicitamente detalhadas no decorrer do texto.
 
 == Propriedades de um grafo
 
-Dois vértices $u, v in V$ são ditos *adjacentes* se existir uma aresta ${u, v} in E$. O vértice $v$ é denominado *vizinho* de $u$, e vice-versa. O conjunto de todos os vértices adjacentes a um vértice $v$ define a sua *vizinhança*, denotada por $N_G (v)$. A cardinalidade deste conjunto, que representa o número de arestas incidentes ao vértice, define o seu *grau*, denotado por $deg(v)$.
+Dois vértices $u, v in V$ são ditos *adjacentes* se existir uma aresta ${u, v} in E$. O vértice $v$ é denominado *vizinho* de $u$, e vice-versa. O conjunto de todos os vértices adjacentes a um vértice $v$ define a sua *vizinhança*, denotada por $N_G (v)$. A cardinalidade deste conjunto, que contabiliza o número de arestas incidentes ao vértice, define o seu *grau*, denotado por $deg(v)$.
 
 
 Um *caminho* entre dois vértices $s, t in V$ é definido como uma sequência de vértices $P = (v_0, v_1, ..., v_k)$ tal que $v_0 = s$, $v_k = t$, e para todo $i$ tal que $0 <= i < k$  ${v_i, v_{i+1}} in E$. O *comprimento* do caminho é dado por $k$, que corresponde ao número de arestas na sequência. É importante notar que tal caminho pode não existir; nesse caso, diz-se que $t$ é inatingível a partir de $s$. Um grafo é dito *conexo* se, para todo par de vértices, existe pelo menos um caminho que os conecta, caso contrário, o grafo é classificado como *desconexo*.
 
-Um *caminho mínimo* entre dois vértices $s$ e $t$ é um caminho cujo comprimento $k$ é o menor possível dentre todos os caminhos existentes entre esses vértices. Ressalta-se que o caminho mínimo não é necessariamente único.  A *distância* entre $s$ e $t$, denotada por $d_(s t)$, é definida como o comprimento desse caminho mínimo. Convenciona-se que, caso não exista caminho entre $s$ e $t$, $d(s, t) = infinity$.
+Um *caminho mínimo* entre dois vértices $s$ e $t$ é um caminho cujo comprimento $k$ é o menor possível dentre todos os caminhos existentes entre esses vértices. Ressalta-se que um caminho mínimo não é necessariamente único.  A *distância* entre $s$ e $t$, denotada por $d(s, t)$, é definida como o comprimento desse caminho mínimo. Convenciona-se que, caso não exista caminho entre $s$ e $t$, $d(s, t) := infinity$.
 #footnote[Em implementações computacionais, sistemas que utilizam a representação de ponto flutuante segundo o padrão IEEE 754
   @IEEEStandardFloatingPoint2019 possuem uma representação de infinito com propriedades desejáveis para vértices inatingíveis.]
 
 A partir da definição de caminhos mínimos, derivam-se duas métricas topológicas fundamentais para a caracterização do modelo de tráfego. A primeira é a *distância média* $chevron.l L chevron.r$, que representa o valor esperado do comprimento do caminho mínimo entre dois vértices quaisquer da rede.
 
-$ chevron.l L chevron.r := 1 / (|V|(|V|-1)) sum_(i != j) d_(i j) $
+$ chevron.l L chevron.r := 1 / (|V|(|V|-1)) sum_(i != j) d(i,j) $
 
 A segunda métrica é a *Centralidade de Intermediação de Aresta* (_Edge Betweenness Centrality_) @brandesVariantsShortestpathBetweenness2008a, que quantifica a frequência em que uma aresta é visitada por caminhos mínimos. A centralidade de intermediação da aresta $e$, denotada por $b_e$, é definida como a soma das frações de todos os caminhos mínimos da rede que passam por essa aresta, normalizada pelo número de arestas possíveis:
 
-$ b_e = 1 / (|V|(|V|-1)) sum_(s, t in V) (sigma(s, t | e)) / (sigma(s, t)) $
+$ b_e := 1 / (|V|(|V|-1)) sum_(s, t in V) (sigma(s, t | e)) / (sigma(s, t)) $
 
+Outra grandeza útil é o diâmetro de um grafo, que é definido intuitivamente como sendo a maior distância entre dois pontos:
+
+$ "diam"(G) := max { d(u, v) \: u, v in V(G) } $
 Seja $cal(W)_(s t)$ o conjunto de todos os caminhos mínimos de um vértice origem $s$ até um destino $t$. Definimos o escalar $sigma(s, t) := |cal(W)_(s t)|$ como a cardinalidade deste conjunto, isto é, o número total de caminhos mínimos possíveis entre $s$ e $t$. Para uma dada aresta $e in E$, denotamos por $sigma(s, t | e)$ a quantidade desses caminhos mínimos que passam  por $e$.
 
 
 
-A definição de $b_e$ foi escolhida com o fator de normalização para que uma relação ficasse mais simples, conforme demonstrado por @brandesMaintainingDualityCloseness2016, a soma das centralidades de intermediação de todas as arestas de um grafo é igual a distância média. Esse resultado é importante para analisar como a topologia da rede influencia o tráfego de pacotes
+A definição de $b_e$ foi escolhida com o fator de normalização para que uma relação ficasse mais simples, conforme demonstrado por
+#cite(<brandesMaintainingDualityCloseness2016>, form: "prose")
+, a soma das centralidades de intermediação de todas as arestas de um grafo é igual a distância média. Esse resultado é importante para analisar como a topologia da rede influencia o tráfego de pacotes.
 
 
 $ chevron.l L chevron.r = sum_(e in E) b_e $ <eq:sum_edge_betweeness>
-
-Modelos de trafego
-
-Diferentes técnicas de otimizações são possíveis, sem ter a pretensão de ser exaustivo mas algumas são
-
-- Políticas de filas: O modelo padrão assume uma fila do tipo _First in First Out_ (FIFO), porém, outras políticas são possíveis usando prioridades arbitrarias, as quais podem ser "injustas" e atrasar pacotes individuais, mas que globalmente melhoram a eficiência da rede @wuInnovativePriorityQueueing2025
-- Roteamentos dinâmicos: Os roteamentos mencionados nesse trabalhos são todos estáticos, ou seja, independente da dinâmica do sistemas as mensagens possuem o mesmo comportamento de trafego, é possível utilizar roteamentos que por exemplo selecionam mínimos caminhos não de forma uniforme mas que minimizam o tamanho das filas das arestas intermediárias
-- Adição/Remoção de arestas: Uma forma de otimizar a rede pode consistir em realizar pequenas mudanças topologias adicionando ou até mesmo removendo arestas,
 
 
 = MATERIAIS E MÉTODOS
 
 
-Dada a elevada combinatória de dinâmicas em grafos de médio porte ($|V| approx 10^3$), o simulador foi desenvolvido na linguagem Rust visando assegurar a viabilidade computacional das simulações em hardware convencional. Esta escolha fundamenta-se na necessidade de conciliar o desempenho de uma linguagem compilada a garantias rigorosas de segurança de memória, concorrência sem condições de corrida e corretude dos resultados @jungRustBeltSecuringFoundations2017. A implementação atual permite a execução paralela de simulações em redes compostas por milhares de nós, utilizando a biblioteca de alto desempenho #text(style: "italic")[rustworkx_core]
+Dada a elevada combinatória de dinâmicas em grafos de médio porte ($|V| approx 10^3$), o simulador foi desenvolvido
+utilizando o subconjunto *Safe Rust* da linguagem de programação Rust, visando assegurar a viabilidade computacional das simulações em hardware convencional. Esta escolha fundamenta-se na necessidade de conciliar o desempenho de uma linguagem compilada a garantias rigorosas de segurança de memória, concorrência sem condições de corrida e corretude dos resultados @jungRustBeltSecuringFoundations2017. A implementação atual permite a execução paralela de simulações em redes compostas por milhares de nós, utilizando a biblioteca de alto desempenho #text(style: "italic")[rustworkx_core]
 @treinishRustworkxHighPerformanceGraph2022 para a manipulação eficiente de algoritmos e estruturas de dados.
 
 Visando assegurar a reprodutibilidade das simulações e resultados apresentados,
@@ -140,11 +129,11 @@ A verificação de corretude do simulador foi realizada por meio de uma bateria 
 
 #figure(
   image("assets/tables/llvm_cov_table.png", width: 75%),
-  caption: [Cobertura de testes do simulador],
+  caption: [Cobertura de testes do simulador (llvm-cov)],
 ) <fig:table_llvm_cov>
 
-Os gráficos e as análises dos dados foram realizadas na linguagem de alto nível Julia @bezansonJuliaFreshApproach2017 com o usado da biblioteca Makie
-@danischMakiejlFlexibleHighperformance2021, oferecendo um equilíbrio entre agilidade, exploração interativa e desempenho
+Os gráficos e as análises dos dados foram realizadas na linguagem de alto nível Julia @bezansonJuliaFreshApproach2017 com o uso da biblioteca Makie
+@danischMakiejlFlexibleHighperformance2021, oferecendo um equilíbrio entre agilidade, exploração interativa e desempenho.
 
 == Formalização do modelo de tráfego de pacotes <sec:formalização_modelo_trafego>
 
@@ -154,9 +143,9 @@ Baseado na meta-análise de
 
 Seja $G = (V, E)$ um grafo conexo, não direcionado, onde $V$ representa o conjunto de nós (roteadores/hosts) e $E$ o conjunto de arestas (links de comunicação). A dinâmica do sistema evolui em passos de tempo discretos conforme as seguintes regras:
 
-+ *Geração de Tráfego*:  A cada unidade de tempo, cada nó $s in V$ tem uma probabilidade $rho$ de gerar uma mensagem. O destino $t in (V without {s})$ de cada pacote é selecionado de forma aleatória uniformemente
++ *Geração de Tráfego*:  A cada unidade de tempo, todo nó $s in V$ tem uma probabilidade $rho$ de gerar uma mensagem. O destino $t in (V without {s})$ de cada pacote é selecionado de forma aleatória uniformemente.
 
-+ *Capacidade de Transmissão*: Todos os nós participam ativamente do roteamento. Cada aresta possui uma capacidade finita $C$, definida como o número máximo de pacotes que podem ser transmitidos através da aresta por unidade de tempo. Caso o número de pacotes a serem enviados por uma aresta exceda sua capacidade, os pacotes remanescentes são armazenados em uma fila tipo *FIFO* (_First-In-First-Out_) contida na aresta, o sistema opera sob um mecanismo de armazenamento e repasse (_store-and-forward_).
++ *Capacidade de Transmissão*: Todos os nós participam ativamente do roteamento. Cada aresta $e$ possui uma capacidade finita $C_e$, definida como o número máximo de pacotes que podem ser transmitidos através da aresta por unidade de tempo. Caso o número de pacotes a serem enviados por uma aresta exceda sua capacidade, os pacotes remanescentes são armazenados em uma fila tipo *FIFO* (_First-In-First-Out_) contida na aresta, o sistema opera sob um mecanismo de armazenamento e repasse (_store-and-forward_).
 
 
 + *Estratégias de Roteamento*: O caminho $P$ percorrido por um pacote originado em $s$ e destino em $t$, é determinado por uma estratégia de roteamento, as estratégias analisadas serão as listas abaixo:
@@ -164,31 +153,40 @@ Seja $G = (V, E)$ um grafo conexo, não direcionado, onde $V$ representa o conju
 
   - *Passeio Aleatório* (_Random Walk_): O caminho $P$ é construído por um processo estocástico em que $P_0=s$. A sequência é construída de forma iterativa, onde cada nó subsequente $P_(i+1)$ é selecionado uniforme entre os vizinhos contidos em $N_G (P_i)$, a condição de parada é quando o pacote chega ao seu destino $t$, ou seja, $P_(i)=t$.
 
-  - *Visibilidade Limitada ($r$)*: A estratégia de roteamento alterna conforme a distância $d_(s t)$. Se $d(s, t) <= r$, utiliza-se o Caminho Mínimo, caso contrário, o pacote executa um Passeio Aleatório até que o destino entre no raio de visibilidade $r$.
+  - *Visibilidade Limitada ($r$)*: Essa estratégia de roteamento alterna conforme a distância $d(s,t)$. Se $d(s, t) <= r$, utiliza-se o Caminho Mínimo, caso contrário, o pacote executa um Passeio Aleatório até que o destino entre no raio de visibilidade $r$.
 Um resultado fundamental desse modelo é a existência de uma *taxa de geração crítica* $rho_c$, que define uma transição de fase no comportamento dinâmico do sistema:
 
-+ *Fase de Fluxo Livre* ($rho < rho_c$): Após um período transiente de estabilização, a rede atinge um _estado estacionário_. Nesse regime, a quantidade total de pacotes na rede oscila em torno de um valor médio constante
++ *Fase de Fluxo Livre* ($rho < rho_c$): Após um período transiente de estabilização, a rede atinge um _estado estacionário_. Nesse regime, a quantidade total de pacotes na rede oscila em torno de um valor médio constante.
 
 
 
 + *Fase de Congestionamento* ($rho > rho_c$): O sistema entra em um regime de saturação onde a taxa de geração de pacotes supera a capacidade de roteamento da rede. Isso resulta em um acúmulo linear de mensagens nas filas ao longo do tempo, caracterizando um estado não estacionário onde o tempo de espera e o atraso dos pacotes divergem para o infinito.
 
 == Métrica de desempenho e atraso
-Para caracterizar a eficiência do roteamento e identificar a transição de fase, define-se o *Atraso Médio* ($delta$). Esta grandeza representa o valor esperado do excesso de tempo de trânsito em relação ao cenário ideal de fluxo livre, sendo definida pela razão entre o tempo de permanência no grafo e a distância geodésica entre a origem e o destino:
+Para caracterizar a eficiência do roteamento e identificar a transição de fase, define-se o *Atraso Médio* ($delta$). Esta grandeza representa o valor esperado do excesso de tempo de trânsito em relação ao cenário ideal de fluxo livre, sendo definida pela razão entre o tempo de permanência no grafo e a distância entre a origem e o destino:
 
-$ delta := chevron.l (T_( s t)) / (d_(s t)) - 1 chevron.r $
+$ delta := chevron.l (t) / (d(s,t)) - 1 chevron.r $
 
 Nesta formulação:
 
-- $T_(s t)$: representa o tempo total decorrido desde a criação da mensagem até a sua entrega final.
-- $d_(s t)$: é a distância de caminho mínimo, que define o tempo de trânsito em regime de fluxo livre (assumindo que cada aresta é percorrida em uma unidade de tempo).
+- $t$: representa o tempo total decorrido desde a criação da mensagem até a sua entrega final.
+- $d(s,t)$: é a distância de caminho mínimo, que é numericalmente igual o tempo de trânsito em regime de fluxo livre.
 - O termo $-1$: normaliza a métrica para que $delta approx 0$ em condições de baixa carga, onde o tempo de trânsito é próximo do limite inferior teórico.
 
 Desta forma, $delta$ atua como um *parâmetro de ordem*: valores próximos de zero indicam um regime de *fluxo livre*, enquanto uma divergência em $delta$ sinaliza a fase de *congestionamento* da rede, onde o tempo de espera nas filas domina a dinâmica do sistema.
 
+== Técnicas de otimização
+Diferentes técnicas de otimizações são possíveis, cada uma priorizando uma característica distinta do que se abstratamente pensa como "eficiência" (minimização da capacidade total, atraso, distância percorrida), algumas das principais formas são:
+
+- Políticas de filas: O modelo padrão assume uma fila do tipo _First in First Out_ (FIFO), porém, outras políticas são possíveis usando prioridades arbitrarias, as quais podem ser "injustas" e atrasar pacotes individuais, mas que globalmente melhoram a eficiência da rede @wuInnovativePriorityQueueing2025.
+- Roteamentos dinâmicos: Os roteamentos mencionados nesse trabalhos são todos estáticos, ou seja, independente da dinâmica do sistemas as mensagens possuem o mesmo comportamento de trafego, é possível utilizar roteamentos que por exemplo selecionam mínimos caminhos não de forma uniforme mas que minimizam o tamanho das filas das arestas intermediárias, sendo geralmente mais eficientes do que roteamentos estátisticos ao custo de complexidade de implementação teórica e prática.
+- Adição/Remoção de arestas: Uma forma de otimizar a rede consisti em realizar pequenas mudanças topologias adicionando ou até mesmo removendo arestas.
+
+
+
 == Intermediação e o número de mensagens <sec:intermediacao_x_numero_mensagens>
 
-Para um roteamento de mínimos caminhos, uma forma simples de prever quantas mensagens $M_e$ passam por uma aresta $e$, é através da sua intermediação, isso acontece pois a centralidade de intermediação mede a quantidade de mínimos caminhos que passam pela aresta, como o roteamento é por mínimos caminhos, essa grandeza mede diretamente o quanto é esperado de tráfego.
+Para um roteamento de mínimos caminhos, uma forma simples de prever quantas mensagens $M_e$ que passam por uma aresta $e$, é através da sua intermediação, isso acontece pois a centralidade de intermediação mede a quantidade de mínimos caminhos que passam pela aresta, como o roteamento é por mínimos caminhos, essa grandeza mede diretamente o quanto é esperado de tráfego.
 
 Como a geração de mensagens é um conjunto de ensaios de Bernoulli para cada vértice, o número total de mensagens geradas segue uma distribuição binominal $B(N,rho)$, podemos estimar  #footnote[A demonstração formal da @eq:mensagem_estimada_e se encontra em @huangInvestigationBothLocal2009] $M_e$ como sendo:
 
@@ -197,18 +195,36 @@ $
   M_e ≃ sum_(s,t in V) underbrace(( B(N,rho))/(N(N-1)), #stack(dir: ttb, [Fração das mensagens geradas], [ com origem em $s$ e destino $t$])) times underbrace(sigma(s, t | e)/(sigma(s, t)), #stack(dir: ttb, [Fração dos caminhos mínimos ], [que passam por $e$]))=B(N,rho) times b_e
 $ <eq:mensagem_estimada_e>
 
-Outro resultado esperado dessa equação é que no caso em que $M_e>C_e$, a aresta $e$ entre em estado congestionado pois começa a receber mais mensagens do que consegue entregar, uma estimativa encontrada na literatura @chenTrafficDynamicsComplex2012 do $rho_c$ do grafo como um todo é considerar a geração mínima para que a primeira aresta  entre em congestionamento $rho_c approx min(C_e/(N b_e))$, para o caso de $C_e=1$ a formula se reduz a:
-$ rho_c approx 1/(N max(b_e)) $ <eq:estimativa_rho>
-
-
 Através dessa aproximação e utilizando a @eq:sum_edge_betweeness, chegamos em uma expressão da quantidade de mensagens que transitam na rede:
 $ sum_(e in E) M_e = B(N,rho) times chevron.l L chevron.r $ <eq:media_mensagens>
 
+Outro resultado esperado da @eq:mensagem_estimada_e é que no caso em que $M_e>C_e$, a aresta $e$ entra em estado congestionado pois começa a receber mais mensagens do que consegue entregar, uma estimativa encontrada na literatura @chenTrafficDynamicsComplex2012 do $rho_c$ do grafo como um todo é considerar a geração mínima para que a primeira aresta  entre em congestionamento $rho_c approx min_(e in E)(C_e/(N b_e))$, para o caso de $C_e=1$ a formula se reduz a:
+$ rho_c approx 1/(N max_(e in E)(b_e)) $ <eq:estimativa_rho>
+
+
+
+
 == Seleção uniforme em $cal(W)_(s t)$ <sec:seleção_uniforme_w>
 
-Um desafio computacional intrínseco ao roteamento de caminhos mínimos sem viés reside na magnitude de $sigma_(s t)$, que frequentemente assume valores proibitivos para o armazenamento explícito de todos os caminhos possíveis #footnote[Como $sigma_(s t)$ pode atingir ordens de magnitude elevadas, há risco de *overflow* em tipos numéricos de tamanho fixo. O simulador desenvolvido utiliza a biblioteca *num-bigint*, que provê inteiros de precisão arbitrária.]. Para mitigar essa limitação, utiliza-se a estratégia de amostragem uniforme fundamentada em #cite(<dreyerOptimalUniformShortest2025>, form: "prose"). Tal método viabiliza a escolha aleatória de caminhos utilizando apenas a matriz de distâncias $d_(s t)$ e a matriz de contagem de caminhos mínimos $sigma_(s t)$.
+Um desafio computacional intrínseco ao roteamento de caminhos mínimos sem viés reside na magnitude de $sigma(s, t)$, que frequentemente assume valores proibitivos para o armazenamento explícito de todos os caminhos possíveis #footnote[Como $sigma(s, t)$ pode atingir ordens de magnitude elevadas, há risco de *overflow* em tipos numéricos de tamanho fixo. O simulador desenvolvido utiliza a biblioteca *num-bigint*, que provê inteiros de precisão arbitrária.]. Para mitigar essa limitação, utiliza-se a estratégia de amostragem uniforme fundamentada em #cite(<dreyerOptimalUniformShortest2025>, form: "prose"). Tal método viabiliza a escolha aleatória de caminhos utilizando apenas a matriz de distâncias $d(s, t)$ e a matriz de contagem de caminhos mínimos $sigma(s, t)$.
 
-Para a implementação deste método, define-se o conjunto de *vértices sucessores* de um nó $v$ em relação a um destino $t$. Um vértice $u$ é considerado predecessor de $v$ se for adjacente a $v$ e estar mais próximo de $t$. Formalmente, o conjunto de sucessores é dado por $N^-(v) = {u in N(v) : d_(u t) = d_(v t) - 1}$.
+Para a implementação deste método, define-se o conjunto de *vértices sucessores* de um nó $v$ em relação a um destino $t$. Um vértice $u$ é considerado sucessor de $v$ se for adjacente a $v$ e estar mais próximo de $t$. Formalmente, o conjunto de sucessores é dado por $N^+(v) = {u in N(v) : d(u,t) < d(v,t)}$.
+
+
+O método consiste em modelar o roteamento como uma cadeia de Markov com estado inicial em um nó $s$ e estado terminal em $t$, o grafo resultante para cada destino $t$ é uma DAG (_Directed Acyclic Graph_), ou seja, um grafo direcionado sem ciclos como na @fig:graph_dag. Para um vértice $v$, a probabilidade de transição para um sucessor $u in N^+(v)$ é definida pelo peso:
+
+$ P(v -> u) = sigma(u, t) / sigma(v, t) $
+
+Demonstra-se que este conjunto de probabilidades resulta em uma seleção estritamente uniforme. Seja $p = (v_0, v_1, dots,v_(k-1), v_k)$ um caminho mínimo entre $s$ e $t$, com $v_0 = s$ e $v_0 = t$. A probabilidade de selecionar este caminho específico $P(p)$ é o produtório das transições de cada salto:
+
+$ P(p) = product_(i=0)^(k) P(v_i -> v_(i+1)) = product_(i=0)^(k) sigma(v_(i+1), t) / sigma(v_i, t) $
+
+Ao expandir o produtório, observa-se um cancelamento telescópico e o resultado esperado:
+
+$
+  P(p) = sigma(v_(1), t) / sigma(v_0, t) dot sigma(v_(2), t) / sigma(v_(1), t) dot dots dot sigma(v_(k), t) / sigma(v_(k-1), t) = sigma(v_k, t) / sigma(v_0, t) = (sigma(t, t))/(sigma(s, t))=1/ (sigma(s, t))
+$
+
 
 #let original_graph = ```
 graph {
@@ -317,36 +333,20 @@ digraph {
           #diagraph.render(graph_dag, labels: mapping, height: 35%)
         ],
       ),
-      caption: [Comparação entre o grafo original e o DAG com raiz em $t$. Qualquer pacote com destino em $t$ terá probabilidades de transição dada pelo peso das arestas que conecta a seus vizinhos da DAG],
-    )]
+      caption: [Comparação entre o grafo original e o DAG com raiz em $t$. Qualquer pacote com destino em $t$ terá probabilidades de transição dada pelo peso das arestas que conectam a seus vizinhos da DAG],
+    )<fig:graph_dag>]
 ]
 
 
-
-
-O método consiste em modelar o roteamento como uma cadeia de Markov com estado inicial em um nó $s$ e estado terminal em $t$. Para um vértice $u$, a probabilidade de transição para um sucessor $v in N^-(u)$ é definida pelo peso:
-
-$ P(u -> v) = sigma_(v t) / sigma_(u t) $
-
-Demonstra-se que este conjunto de probabilidades resulta em uma seleção estritamente uniforme. Seja $p = (v_0, v_1, dots,v_(k-1), v_k)$ um caminho mínimo entre $s$ e $t$, com $v_0 = s$ e $v_0 = t$. A probabilidade de selecionar este caminho específico $P(p)$ é o produtório das transições de cada salto:
-
-$ P(p) = product_(i=0)^(k) P(v_i -> v_(i+1)) = product_(i=0)^(k) sigma_(v_(i+1) t) / sigma_( v_i t) $
-
-Ao expandir o produtório, observa-se um cancelamento telescópico e o resultado esperado:
-
-$
-  P(p) = sigma_(v_(1)t) / sigma_(v_0 t) dot sigma_(v_(2) t) / sigma_(v_(1) t) dot dots dot sigma_(v_(k) t) / sigma_(v_(k-1) t) = sigma_( v_k t) / sigma_(v_0 t) = (sigma_(t t))/(sigma_(s t))=1/ (sigma_(s t))
-$
-
 == Modelos de Grafo
-a
+
 Diferentes algoritmos de geração de grafos servem como modelos de referência para a análise de redes complexas. Para fins de comparação e análise de desempenho em cenários de tráfego, foram selecionados os seguintes modelos:
 
-- *Erdős-Rényi $G(N, E)$:* Define-se como um grafo selecionado uniformemente a partir do conjunto de todos os grafos possíveis com $N$ vértices e $$ arestas. Estudado originalmente por #cite(<erdosEvolutionRandomGraphs2011>, form: "prose"), este modelo serve como controle estatístico para testar a hipótese nula de que propriedades na rede decorrem de uma topologia específica ou se são meramente fruto de conexões aleatórias.
+- *Erdős-Rényi $G(N, E)$:* Define-se como um grafo selecionado uniformemente a partir do conjunto de todos os grafos possíveis com $N$ vértices e $E$ arestas. Estudado originalmente por #cite(<erdosEvolutionRandomGraphs2011>, form: "prose"), este modelo serve como controle estatístico para testar a hipótese nula de que propriedades na rede decorrem de uma topologia específica ou se são meramente fruto de conexões aleatórias.
 
-- *Barabási-Albert $B A(n, m)$:* Caracteriza-se por um processo de crescimento dinâmico que incorpora o mecanismo de ligação preferencial. O algoritmo inicia-se com um grafo de $m_0$ nós e, a cada iteração, um novo nó é adicionado com $m$ arestas ($m <= m_0$). A probabilidade $Pi$ de que o novo nó se conecte a um nó $i$ existente é proporcional ao seu grau $k_i$, conforme a relação:
+- *Barabási-Albert $B A(N, m)$:* Caracteriza-se por um processo de crescimento dinâmico que incorpora o mecanismo de ligação preferencial. O algoritmo inicia-se com um grafo de $m_0$ nós e, a cada iteração, um novo nó é adicionado com $m$ arestas ($m <= m_0$). A probabilidade $Pi$ de que o novo nó se conecte a um nó $i$ existente é proporcional ao seu grau $k_i$, conforme a relação:
   $ Pi_i = k_i / (sum_j k_j) $
-  Este modelo, proposto por #cite(<barabasiEmergenceScalingRandom1999>, form: "prose") reproduz a distribuição de grau em lei de potência observada em redes de infraestrutura e tráfego reais.
+  Este modelo, proposto por #cite(<barabasiEmergenceScalingRandom1999>, form: "prose") reproduz a distribuição de grau em lei de potência, algumas redes mencionadas no artigo original que seguem essa distribuição de potência são a rede de referência de sites na internet, rede de  colaboração entre atores e a rede elétrica.
 
 - *Watts–Strogatz $W S(n, K, beta)$*: Modelo proposto por #cite(<wattsCollectiveDynamicsSmallworld1998>, form: "prose") para modelar o fenômeno de "mundo pequeno" em que redes exibem simultaneamente alto coeficiente de agrupamento e distâncias médias pequenas. O modelo inicia com um grafo regular onde cada nó está conectado aos seus $K$ vizinhos mais próximos, cada aresta é então rearranjada com probabilidade $beta$ para um nó escolhido aleatoriamente.
 - *Grafo Geométrico Aleatório $G G A(n, r)$*: Neste modelo, os $n$ nós são distribuídos aleatoriamente em um espaço euclidiano,  uma aresta é estabelecida entre dois nós se, e somente se, a distância euclidiana entre eles for inferior a um raio de corte $r$.

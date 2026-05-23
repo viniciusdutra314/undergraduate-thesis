@@ -4,7 +4,7 @@ export Engine, Topology, Analysis, Schema, Style, SharedData
 module Style
 export topology_to_color, log_x_log_y_style, log_x_style
 using CairoMakie
-const topology_to_color::Dict{String,String} = Dict("Barabási–Albert" => "red", "Erdős–Rényi" => "blue", "Rede Geométrica" => "green", "Watts–Strogatz" => "purple")
+const topology_to_color::Dict{String,String} = Dict("Barabási–Albert" => "red", "Erdős–Rényi" => "blue", "Rede Geométrica Aleatória" => "green", "Watts–Strogatz" => "purple")
 const log_x_log_y_style = (
     xscale=log10,
     yscale=log10,
