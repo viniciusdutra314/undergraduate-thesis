@@ -111,6 +111,20 @@ A definição de $b_e$ foi escolhida com o fator de normalização para que uma 
 $ chevron.l L chevron.r = sum_(e in E) b_e $ <eq:sum_edge_betweeness>
 
 
+== Modelos de Grafo
+
+Diferentes algoritmos de geração de grafos servem como modelos de referência para a análise de redes complexas. Para fins de comparação e análise de desempenho em cenários de tráfego, foram selecionados os seguintes modelos:
+
+- *Erdős-Rényi $G(N, E)$:* Define-se como um grafo selecionado uniformemente a partir do conjunto de todos os grafos possíveis com $N$ vértices e $E$ arestas. Estudado originalmente por #cite(<erdosEvolutionRandomGraphs2011>, form: "prose"), este modelo serve como controle estatístico para testar a hipótese nula de que propriedades na rede decorrem de uma topologia específica ou se são meramente fruto de conexões aleatórias.
+
+- *Grafo Geométrico Aleatório $G G A(n, r)$*: Neste modelo, os $n$ nós são distribuídos aleatoriamente em um espaço euclidiano,  uma aresta é estabelecida entre dois nós se, e somente se, a distância euclidiana entre eles for inferior a um raio de corte $r$. Proposta originalmente por #cite(<gilbertRandomPlaneNetworks1961>,form:"prose") esse modelo é usado para estudar redes de comunicação com distâncias limitadas ou até mesmo doenças infeciosas.
+ 
+- *Watts–Strogatz $W S(n, K, beta)$*: Modelo proposto por #cite(<wattsCollectiveDynamicsSmallworld1998>, form: "prose") para modelar o fenômeno de "mundo pequeno" em que redes exibem simultaneamente alto coeficiente de agrupamento e distâncias médias pequenas. O modelo inicia com um grafo regular onde cada nó está conectado aos seus $K$ vizinhos mais próximos, cada aresta é então rearranjada com probabilidade $beta$ para um nó escolhido aleatoriamente.
+
+- *Barabási-Albert $B A(N, m)$:* Caracteriza-se por um processo de crescimento dinâmico que incorpora o mecanismo de ligação preferencial. O algoritmo inicia-se com um grafo de $m_0$ nós e, a cada iteração, um novo nó é adicionado com $m$ arestas ($m <= m_0$). A probabilidade $Pi$ de que o novo nó se conecte a um nó $i$ existente é proporcional ao seu grau $k_i$, conforme a relação:
+  $ Pi_i = k_i / (sum_j k_j) $
+  Este modelo, proposto por #cite(<barabasiEmergenceScalingRandom1999>, form: "prose") reproduz a distribuição de grau em lei de potência, algumas redes mencionadas no artigo original que seguem essa distribuição de potência são a rede de referência de sites na internet, rede de  colaboração entre atores e algumas rede elétricas.
+
 = MATERIAIS E MÉTODOS
 
 
@@ -162,47 +176,18 @@ Um resultado fundamental desse modelo é a existência de uma *taxa de geração
 
 + *Fase de Congestionamento* ($rho > rho_c$): O sistema entra em um regime de saturação onde a taxa de geração de pacotes supera a capacidade de roteamento da rede. Isso resulta em um acúmulo linear de mensagens nas filas ao longo do tempo, caracterizando um estado não estacionário onde o tempo de espera e o atraso dos pacotes divergem para o infinito.
 
-== Métrica de desempenho e atraso
-Para caracterizar a eficiência do roteamento e identificar a transição de fase, define-se o *Atraso Médio* ($delta$). Esta grandeza representa o valor esperado do excesso de tempo de trânsito em relação ao cenário ideal de fluxo livre, sendo definida pela razão entre o tempo de permanência no grafo e a distância entre a origem e o destino:
 
-$ delta := chevron.l (t) / (d(s,t)) - 1 chevron.r $
+== Algoritmo de garantia de conectividade <section:procedimento_conectividade>
 
-Nesta formulação:
+Em modelos de análise de tráfego, a conetividade do grafo é uma propriedade necessária, pois garante que uma mensagem originada em qualquer nó $s$ seja capaz de alcançar qualquer destino $t$. Contudo, diversos modelos de redes, como o grafo aleatório de Erdős-Rényi, não garantem a conectividade global em todos os seus regimes de parâmetros.
 
-- $t$: representa o tempo total decorrido desde a criação da mensagem até a sua entrega final.
-- $d(s,t)$: é a distância de caminho mínimo, que é numericalmente igual o tempo de trânsito em regime de fluxo livre.
-- O termo $-1$: normaliza a métrica para que $delta approx 0$ em condições de baixa carga, onde o tempo de trânsito é próximo do limite inferior teórico.
+Para transformar o grafo em conexo descaracterizando ao mínimo sua topologia original, aplica-se um procedimento heurístico de conexão de componentes via troca de arestas (_edge swap_). O algoritmo identifica as componentes conexas de $G$, portanto, $union_i C_i = V$, enquanto o grafo não for conexo, o algoritmo realiza a fusão entre duas componentes escolhidas aleatoriamente $C_a$ e $C_b$
 
-Desta forma, $delta$ atua como um *parâmetro de ordem*: valores próximos de zero indicam um regime de *fluxo livre*, enquanto uma divergência em $delta$ sinaliza a fase de *congestionamento* da rede, onde o tempo de espera nas filas domina a dinâmica do sistema.
+O mecanismo de fusão fundamenta-se na seleção aleatória de arestas que apresentem redundância estrutural, ou seja, *arestas que não sejam pontes* (_bridges_). Uma aresta $(u, v)$ é uma ponte se sua remoção aumenta o número de componentes conectadas da rede, essas arestas podem ser encontradas usando o algoritmo de   #cite(<tarjanNoteFindingBridges1974>, form: "prose"). Ao selecionar uma aresta $(u, v) in E(C_a)$ e uma aresta $(x, y) in E(C_b)$ que pertençam a ciclos (não-pontes), garante-se que a remoção de ambas não fragmente as componentes originais antes da fusão.
 
-== Técnicas de otimização
-Diferentes técnicas de otimizações são possíveis, cada uma priorizando uma característica distinta do que se abstratamente pensa como "eficiência" (minimização da capacidade total, atraso, distância percorrida), algumas das principais formas são:
+Essas arestas são removidas e substituídas pelas aresta $(u, x)$ e $(v, y)$. Esta operação de re-cabeamento (_rewiring_) é matematicamente interessante pois preserva a sequência de graus, ou seja, o grau de cada nó permanece inalterado e conecta a componente $C_a$ com $C_b$.
 
-- Políticas de filas: O modelo padrão assume uma fila do tipo _First in First Out_ (FIFO), porém, outras políticas são possíveis usando prioridades arbitrarias, as quais podem ser "injustas" e atrasar pacotes individuais, mas que globalmente melhoram a eficiência da rede @wuInnovativePriorityQueueing2025.
-- Roteamentos dinâmicos: Os roteamentos mencionados nesse trabalhos são todos estáticos, ou seja, independente da dinâmica do sistemas as mensagens possuem o mesmo comportamento de trafego, é possível utilizar roteamentos que por exemplo selecionam mínimos caminhos não de forma uniforme mas que minimizam o tamanho das filas das arestas intermediárias, sendo geralmente mais eficientes do que roteamentos estátisticos ao custo de complexidade de implementação teórica e prática.
-- Adição/Remoção de arestas: Uma forma de otimizar a rede consisti em realizar pequenas mudanças topologias adicionando ou até mesmo removendo arestas.
-
-
-
-== Intermediação e o número de mensagens <sec:intermediacao_x_numero_mensagens>
-
-Para um roteamento de mínimos caminhos, uma forma simples de prever quantas mensagens $M_e$ que passam por uma aresta $e$, é através da sua intermediação, isso acontece pois a centralidade de intermediação mede a quantidade de mínimos caminhos que passam pela aresta, como o roteamento é por mínimos caminhos, essa grandeza mede diretamente o quanto é esperado de tráfego.
-
-Como a geração de mensagens é um conjunto de ensaios de Bernoulli para cada vértice, o número total de mensagens geradas segue uma distribuição binominal $B(N,rho)$, podemos estimar  #footnote[A demonstração formal da @eq:mensagem_estimada_e se encontra em @huangInvestigationBothLocal2009] $M_e$ como sendo:
-
-
-$
-  M_e ≃ sum_(s,t in V) underbrace(( B(N,rho))/(N(N-1)), #stack(dir: ttb, [Fração das mensagens geradas], [ com origem em $s$ e destino $t$])) times underbrace(sigma(s, t | e)/(sigma(s, t)), #stack(dir: ttb, [Fração dos caminhos mínimos ], [que passam por $e$]))=B(N,rho) times b_e
-$ <eq:mensagem_estimada_e>
-
-Através dessa aproximação e utilizando a @eq:sum_edge_betweeness, chegamos em uma expressão da quantidade de mensagens que transitam na rede:
-$ sum_(e in E) M_e = B(N,rho) times chevron.l L chevron.r $ <eq:media_mensagens>
-
-Outro resultado esperado da @eq:mensagem_estimada_e é que no caso em que $M_e>C_e$, a aresta $e$ entra em estado congestionado pois começa a receber mais mensagens do que consegue entregar, uma estimativa encontrada na literatura @chenTrafficDynamicsComplex2012 do $rho_c$ do grafo como um todo é considerar a geração mínima para que a primeira aresta  entre em congestionamento $rho_c approx min_(e in E)(C_e/(N b_e))$, para o caso de $C_e=1$ a formula se reduz a:
-$ rho_c approx 1/(N max_(e in E)(b_e)) $ <eq:estimativa_rho>
-
-
-
+Nos casos excepcionais onde uma das componentes é uma árvore ou um vértice isolado, situações em que não existem arestas que não sejam pontes, a conectividade é estabelecida pela inserção direta de uma nova aresta.
 
 == Seleção uniforme em $cal(W)_(s t)$ <sec:seleção_uniforme_w>
 
@@ -338,32 +323,45 @@ digraph {
 ]
 
 
-== Modelos de Grafo
+== Intermediação e o número de mensagens <sec:intermediacao_x_numero_mensagens>
 
-Diferentes algoritmos de geração de grafos servem como modelos de referência para a análise de redes complexas. Para fins de comparação e análise de desempenho em cenários de tráfego, foram selecionados os seguintes modelos:
+Para um roteamento de mínimos caminhos, uma forma simples de prever quantas mensagens $M_e$ que passam por uma aresta $e$, é através da sua intermediação, isso acontece pois a centralidade de intermediação mede a quantidade de mínimos caminhos que passam pela aresta, como o roteamento é por mínimos caminhos, essa grandeza mede diretamente o quanto é esperado de tráfego.
 
-- *Erdős-Rényi $G(N, E)$:* Define-se como um grafo selecionado uniformemente a partir do conjunto de todos os grafos possíveis com $N$ vértices e $E$ arestas. Estudado originalmente por #cite(<erdosEvolutionRandomGraphs2011>, form: "prose"), este modelo serve como controle estatístico para testar a hipótese nula de que propriedades na rede decorrem de uma topologia específica ou se são meramente fruto de conexões aleatórias.
+Como a geração de mensagens é um conjunto de ensaios de Bernoulli para cada vértice, o número total de mensagens geradas segue uma distribuição binominal $B(N,rho)$, podemos estimar  #footnote[A demonstração formal da @eq:mensagem_estimada_e se encontra em @huangInvestigationBothLocal2009] $M_e$ como sendo:
 
-- *Barabási-Albert $B A(N, m)$:* Caracteriza-se por um processo de crescimento dinâmico que incorpora o mecanismo de ligação preferencial. O algoritmo inicia-se com um grafo de $m_0$ nós e, a cada iteração, um novo nó é adicionado com $m$ arestas ($m <= m_0$). A probabilidade $Pi$ de que o novo nó se conecte a um nó $i$ existente é proporcional ao seu grau $k_i$, conforme a relação:
-  $ Pi_i = k_i / (sum_j k_j) $
-  Este modelo, proposto por #cite(<barabasiEmergenceScalingRandom1999>, form: "prose") reproduz a distribuição de grau em lei de potência, algumas redes mencionadas no artigo original que seguem essa distribuição de potência são a rede de referência de sites na internet, rede de  colaboração entre atores e a rede elétrica.
 
-- *Watts–Strogatz $W S(n, K, beta)$*: Modelo proposto por #cite(<wattsCollectiveDynamicsSmallworld1998>, form: "prose") para modelar o fenômeno de "mundo pequeno" em que redes exibem simultaneamente alto coeficiente de agrupamento e distâncias médias pequenas. O modelo inicia com um grafo regular onde cada nó está conectado aos seus $K$ vizinhos mais próximos, cada aresta é então rearranjada com probabilidade $beta$ para um nó escolhido aleatoriamente.
-- *Grafo Geométrico Aleatório $G G A(n, r)$*: Neste modelo, os $n$ nós são distribuídos aleatoriamente em um espaço euclidiano,  uma aresta é estabelecida entre dois nós se, e somente se, a distância euclidiana entre eles for inferior a um raio de corte $r$.
-== Algoritmo de garantia de conectividade <section:procedimento_conectividade>
+$
+  M_e ≃ sum_(s,t in V) underbrace(( B(N,rho))/(N(N-1)), #stack(dir: ttb, [Fração das mensagens geradas], [ com origem em $s$ e destino $t$])) times underbrace(sigma(s, t | e)/(sigma(s, t)), #stack(dir: ttb, [Fração dos caminhos mínimos ], [que passam por $e$]))=B(N,rho) times b_e
+$ <eq:mensagem_estimada_e>
 
-Em modelos de análise de tráfego, a conetividade do grafo é uma propriedade necessária, pois garante que uma mensagem originada em qualquer nó $s$ seja capaz de alcançar qualquer destino $t$. Contudo, diversos modelos de redes, como o grafo aleatório de Erdős-Rényi, não garantem a conectividade global em todos os seus regimes de parâmetros.
+Através dessa aproximação e utilizando a @eq:sum_edge_betweeness, chegamos em uma expressão da quantidade de mensagens que transitam na rede:
+$ sum_(e in E) M_e = B(N,rho) times chevron.l L chevron.r $ <eq:media_mensagens>
 
-Para transformar o grafo em conexo descaracterizando ao mínimo sua topologia original, aplica-se um procedimento heurístico de conexão de componentes via troca de arestas (_edge swap_). O algoritmo identifica as componentes conexas de $G$, portanto, $union_i C_i = V$, enquanto o grafo não for conexo, o algoritmo realiza a fusão entre duas componentes escolhidas aleatoriamente $C_a$ e $C_b$
+Outro resultado esperado da @eq:mensagem_estimada_e é que no caso em que $M_e>C_e$, a aresta $e$ entra em estado congestionado pois começa a receber mais mensagens do que consegue entregar, uma estimativa encontrada na literatura @chenTrafficDynamicsComplex2012 do $rho_c$ do grafo como um todo é considerar a geração mínima para que a primeira aresta  entre em congestionamento $rho_c approx min_(e in E)(C_e/(N b_e))$, para o caso de $C_e=1$ a formula se reduz a:
+$ rho_c approx 1/(N max_(e in E)(b_e)) $ <eq:estimativa_rho>
 
-O mecanismo de fusão fundamenta-se na seleção aleatória de arestas que apresentem redundância estrutural, ou seja, *arestas que não sejam pontes* (_bridges_). Uma aresta $(u, v)$ é uma ponte se sua remoção aumenta o número de componentes conectadas da rede, essas arestas podem ser encontradas usando o algoritmo de   #cite(<tarjanNoteFindingBridges1974>, form: "prose"). Ao selecionar uma aresta $(u, v) in E(C_a)$ e uma aresta $(x, y) in E(C_b)$ que pertençam a ciclos (não-pontes), garante-se que a remoção de ambas não fragmente as componentes originais antes da fusão.
+== Métrica de desempenho e atraso
+Para caracterizar a eficiência do roteamento e identificar a transição de fase, define-se o *Atraso Médio* ($delta$). Esta grandeza representa o valor esperado do excesso de tempo de trânsito em relação ao cenário ideal de fluxo livre, sendo definida pela razão entre o tempo de permanência no grafo e a distância entre a origem e o destino:
 
-Essas arestas são removidas e substituídas pelas aresta $(u, x)$ e $(v, y)$. Esta operação de re-cabeamento (_rewiring_) é matematicamente interessante pois preserva a sequência de graus, ou seja, o grau de cada nó permanece inalterado e conecta a componente $C_a$ com $C_b$.
+$ delta := chevron.l (t) / (d(s,t)) - 1 chevron.r $
 
-Nos casos excepcionais onde uma das componentes é uma árvore ou um vértice isolado, situações em que não existem arestas que não sejam pontes, a conectividade é estabelecida pela inserção direta de uma nova aresta.
+Nesta formulação:
+
+- $t$: representa o tempo total decorrido desde a criação da mensagem até a sua entrega final.
+- $d(s,t)$: é a distância de caminho mínimo, que é numericalmente igual o tempo de trânsito em regime de fluxo livre.
+- O termo $-1$: normaliza a métrica para que $delta approx 0$ em condições de baixa carga, onde o tempo de trânsito é próximo do limite inferior teórico.
+
+Desta forma, $delta$ atua como um *parâmetro de ordem*: valores próximos de zero indicam um regime de *fluxo livre*, enquanto uma divergência em $delta$ sinaliza a fase de *congestionamento* da rede, onde o tempo de espera nas filas domina a dinâmica do sistema.
+
+== Técnicas de otimização
+Diferentes técnicas de otimizações são possíveis, cada uma priorizando uma característica distinta do que se abstratamente pensa como "eficiência" (minimização da capacidade total, atraso, distância percorrida), algumas das principais formas são:
+
+- Políticas de filas: O modelo padrão assume uma fila do tipo _First in First Out_ (FIFO), porém, outras políticas são possíveis usando prioridades arbitrarias, as quais podem ser "injustas" e atrasar pacotes individuais, mas que globalmente melhoram a eficiência da rede @wuInnovativePriorityQueueing2025.
+- Roteamentos dinâmicos: Os roteamentos mencionados nesse trabalhos são todos estáticos, ou seja, independente da dinâmica do sistemas as mensagens possuem o mesmo comportamento de trafego, é possível utilizar roteamentos que por exemplo selecionam mínimos caminhos não de forma uniforme mas que minimizam o tamanho das filas das arestas intermediárias, sendo geralmente mais eficientes do que roteamentos estátisticos ao custo de complexidade de implementação teórica e prática.
+- Adição/Remoção de arestas: Uma forma de otimizar a rede consisti em realizar pequenas mudanças topologias adicionando ou até mesmo removendo arestas.
 
 == Adaptação da capacidade dos elos <sec:adaptação_capacidade_elos>
-Assume-se que o sistema opera em um *regime não crítico*, isto é, a taxa de geração de mensagens É suficientemente baixa para evitar o congestionamento, permitindo que a rede atinja um equilíbrio estatístico. No estado de equilíbrio, associa-se a cada aresta $e in E$ uma função densidade de probabilidade, denotada por $f_e$, que representa a distribuição do número de mensagens na fila em um instante qualquer.
+Assume-se que o sistema opera em um *regime não crítico*, isto é, a taxa de geração de mensagens é suficientemente baixa para evitar o congestionamento, permitindo que a rede atinja um equilíbrio estatístico. No estado de equilíbrio, associa-se a cada aresta $e in E$ uma função densidade de probabilidade, denotada por $f_e$, que representa a distribuição do número de mensagens na fila em um instante qualquer.
 
 Define-se a *Taxa de Fluxo Livre*, ou do inglês _Free Flow Rate_ (FFR) de uma aresta como a proporção de tempo em que o número de mensagens enfileiradas não excede a capacidade da aresta, ou seja, a fração do tempo em que as mensagens não sofrem atraso na sua entrega. Formalmente, para uma aresta $e$, a FFR é dada por:
 
@@ -376,19 +374,19 @@ Dado uma taxa mínima desejado para o fluxo livre, denotado por $eta$, uma quest
 - Toda aresta satisfaça $F_e (C_e) >= eta$.
 - A capacidade total do sistema, dada por $sum_{e in E} C_e$, seja minimizada.
 
-Um algoritmo local heurístico que até o conhecimento do autor é inovador,é descrito logo em seguida.
+Um algoritmo local heurístico que até o conhecimento do autor é inovador, é descrito logo em seguida:
 
-Dado um intervalo de tempo $Delta T$ suficientemente longo para o sistema atingir o equilíbrio. Para cada aresta calcula-se nesse intervalo de tempo o histograma de número de mensagens recebidos, a partir desse histograma é atualizada a capacidade tal forma a ser a mínima capacidade necessária para atingir a FFR desejada durante o intervalo $Delta T$:
+Dado um intervalo de tempo $Delta T$ suficientemente longo para o sistema atingir o equilíbrio, para cada aresta calcula-se nesse intervalo de tempo o histograma de número de mensagens recebidos, a partir desse histograma é atualizada a capacidade tal forma a ser a mínima capacidade necessária para atingir a FFR desejada durante o intervalo $Delta T$:
 
 $ C_e = min {C in ZZ^+ : F_e (C) >= eta}, quad forall e in E. $ <eq:metodo>
 
 Este procedimento atua como uma *heurística*, visto que a alteração da capacidade de uma única aresta pode influenciar a distribuição de tráfego em toda a rede. No entanto, ao aplicar iterativamente a @eq:metodo e permitir que o sistema se estabilize novamente em intervalos sucessivos $Delta T$, observa-se empiricamente a convergência para uma configuração estável que satisfaz a restrição de FFR enquanto tem uma capacidade total não muito grande.
 
-Uma das vantagens desse método é por ele ser local, cada aresta só precisa de informação do seu próprio trafego observado, o que é uma características que torna a heurística escalável para redes de virtualmente qualquer tamanho
+Uma das vantagens desse método é por ele ser local, cada aresta só precisa de informação do seu próprio trafego observado, o que é uma características que torna a heurística escalável para redes de virtualmente qualquer tamanho.
 
 = RESULTADOS
 
-Todos os grafos comparados foram gerados com parâmetros de forma a não diferirem em mais do que 1% no número de nós e de arestas, a conectividade foi garantido pelo procedimento descrito na @section:procedimento_conectividade, isso estabelece uma comparação justa em um cenário que se queira uma rede eficiente dado $N$ nós e $M$ conexões entre eles
+Todos os grafos comparados foram gerados com parâmetros de forma a não diferirem em mais do que 1% no número de nós e de arestas, a conectividade foi garantido pelo procedimento descrito na @section:procedimento_conectividade, isso estabelece uma comparação justa em um cenário que se queira uma rede eficiente dado $N$ nós e $M$ conexões entre eles.
 
 == Sem adaptação das capacidades <section:sem_adaptacao>
 
@@ -400,7 +398,7 @@ A @fig:rho_vs_atraso compara a eficiência dos 4 modelos de grafos escolhidos pa
   $ p_c ("Erdős–Rényi")>p_c ("Watts–Strogatz")>p_c ("Barabási–Albert")>p_c ("Rede Geométrica") $
 }
 
-A @fig:rho_vs_atraso mostras as estimativas como linha tracejadas (obtidas pela @eq:estimativa_rho), elas parecem serem mais precisas para grafos que possuem muitas arestas com intermediações altas, isso ocorre pois nesses grafos mais arestas possuem uma taxa de geração crítica próxima do valor da @eq:estimativa_rho, já no grafo de Erdős–Rényi que poucas arestas possuem $b_e>10^(-3)$, a estimativa foi bastante abaixo do observado.
+A @fig:rho_vs_atraso mostras as estimativas das taxas críticas $rho_c$ como linhas tracejadas (obtidas pela @eq:estimativa_rho), elas parecem serem mais precisas para grafos que possuem muitas arestas com intermediações altas, isso ocorre pois nesses grafos mais arestas possuem uma taxa de geração crítica próxima do valor da @eq:estimativa_rho, já no grafo de Erdős–Rényi que poucas arestas possuem $b_e>10^(-3)$, a estimativa foi bastante abaixo do observado.
 
 #let p_critico_df = csv("assets/tables/graph_stats.csv")
 
@@ -420,16 +418,16 @@ A @fig:rho_vs_atraso mostras as estimativas como linha tracejadas (obtidas pela 
   columns: (1.6fr, 1fr, 1fr, 1fr, 1fr, 1fr),
   align: (left, center, center, center, center, center, center),
   table.hline(stroke: 1pt),
-  table.header([*Grafo*], [*$N$*], [*$E$*], [*$d$*], [*$chevron.l L chevron.r$*], [*$C$*]),
+  table.header([*Grafo*], [*$N$*], [*$E$*], [*$chevron.l L chevron.r$*], [*$C$*], [*diam*]),
   table.hline(stroke: 0.5pt),
   ..for (graph_name, _, n, e, d, l, c) in p_critico_df.slice(1) {
     (
       text(fill: topology_to_color.at(graph_name), stroke: 0.005em)[#graph_name],
       n,
       e,
-      d,
       round_num(l, 2),
       round_num(c, 3),
+      d,
     )
   },
   table.hline(stroke: 1pt),
@@ -454,7 +452,7 @@ A @fig:rho_vs_atraso mostras as estimativas como linha tracejadas (obtidas pela 
   grid.cell(colspan: 2, align(center, box(width: 80%, table_p_critico_df))),
   caption: [
     Análise comparativa da dinâmica de tráfego em diferentes topologias de rede.
-    A tabela apresenta as propriedades estruturais: número de nós $N$, arestas $E$, diâmetro ($d$), distância esperada $chevron.l L chevron.r$ e coeficiente de agrupamento $C$.
+    A tabela apresenta as propriedades estruturais: número de nós $N$, arestas $E$, diâmetro (diam), distância esperada $chevron.l L chevron.r$ e coeficiente de agrupamento $C$.
   ],
   label: <fig:rho_vs_atraso>,
 )
@@ -467,6 +465,7 @@ Afim de melhor entender as diferenças entres os grafos, na @fig:intermediação
 É interessante observar como que para os grafos simulados a intermediação varia em cerca de 3 ordens de grandeza $b_e in [10^(-6),10^(-3)]$ , com a equação @eq:mensagem_estimada_e que estabele uma relação linear entre quantidade de mensagens e intermediação, isso demostra como certas arestas recebem muito mais mensagens do que outras, e portanto, são mais "importantes"
 estruturalmente do que outras.
 
+Pela @eq:mensagem_estimada_e é esperado que o coeficiente linear da regressão intermediação por número de mensagens seja $B(N,rho)$, no caso particular simulado  em que $N=5000$ e $rho=0.01$, é esperado $alpha=50$, que é bem próximo do valor observado na da tabela da @fig:intermediação_vs_mensagens.
 
 #let betweeness_vs_messages = csv(
   "assets/tables/betweeness_vs_messages.csv",
@@ -503,18 +502,23 @@ estruturalmente do que outras.
   stack(
     dir: ttb,
     spacing: 1.5em,
-    image("assets/plots/p_critico_betweeness.svg", width: 80%),
+    image("assets/plots/p_critico_betweeness.svg", width: 60%),
     box(width: 65%)[#table_betweeness_vs_messages],
   ),
   caption: [Análise da correlação entre centralidade de intermediação de aresta e mensagens recebidas, $rho$ fixo em 0.01],
 ) <fig:intermediação_vs_mensagens>
 
 
-Pela @eq:mensagem_estimada_e é esperado que o coeficiente linear da regressão intermediação por número de mensagens seja $B(N,rho)$, no caso particular simulado  em que $N=5000$ e $rho=0.01$, é esperado $alpha=50$, que é bem próximo do valor observado na da tabela da @fig:intermediação_vs_mensagens.
 
-Outra grandeza de interesse é a quantidade total de presentes na rede, a @eq:media_mensagens prevê uma relação linear com esse valor e a distância média, uma maneira de verificar essa equação é usar um modelo de grafo que se possa fixar $N,E,rho$ e variar $chevron.l L chevron.r$.
 
-O modelo de Watts-Strogatz consegue fazer exatamente isso, com $beta approx 0$ (grafo regular) a distância é alta e é proporcional a $N$, já em $beta approx 1$ o modelo se aproxima de um grafo aleatório tendo $chevron.l L chevron.r$ baixo, para valores intermediários $0<beta<1$ é possível atingir redes de "mundo pequeno" em que $chevron.l L chevron.r$ é pequeno mas que $C$ é alto como ilusta a @fig:watts_strogatz_classico.
+Outra grandeza de interesse é a quantidade total de mensagens presentes na rede, a @eq:media_mensagens prevê uma relação linear com esse valor e a distância média, uma maneira de verificar essa equação é usar um modelo de grafo que se possa fixar $N,E,rho$ e variar $chevron.l L chevron.r$.
+Um modelo que consegue variar essa grandeza é o modelo de Watts-Strogatz, que assume comportamentos diferentes dependendo do valor $beta$:
+
+- *$beta approx 0$*: o grafo é quase regular, com alta distância média $chevron.l L chevron.r$ e  agrupamento $C$.
+- *$0 < beta < 1$*: surgem redes de "mundo pequeno", nas quais $chevron.l L chevron.r$ diminui bastante enquanto o coeficiente de agrupamento $C$ permanece alto.
+- *$beta approx 1$*: o modelo se aproxima de um grafo aleatório, com ambos $chevron.l L chevron.r$ e $C$ sendo baixos.
+
+Esses comportamentos são ilustrados na @fig:watts_strogatz_classico.
 
 
 #figure(
@@ -538,11 +542,9 @@ Realizando simulações em grafos Watts-Strogatz com diferentes valores de $beta
 ) <fig:watts_messages_vs_time>
 
 == Com adaptação das capacidades
-Os resultados obtidos na seção anterior (@section:sem_adaptacao) suponham que todos as aresta tinham capacidade unitaria constante no tempo, agora o método descrito na seção (@sec:adaptação_capacidade_elos) de adaptação das capacidades dada o tráfego será o usado, nos mesmos grafos e nas mesmas condições.
+Os resultados obtidos na seção anterior (@section:sem_adaptacao) suponham que todos as aresta tinham capacidade unitaria constante no tempo, agora o método descrito na seção (@sec:adaptação_capacidade_elos) de adaptação das capacidades dada o tráfego será o usado. O modelo de rede geométrica foi desconsiderado nessa seção, pois os resultados anteriores demonstram o seu enorme $chevron.l L chevron.r$ e conseguemente ineficiência de tráfego em comparação aos outros modelos.
 
-O modelo de rede geométrica foi desconsiderado nessa seção, pois os resultados anteriores demonstram o seu enorme $chevron.l L chevron.r$ e conseguemente ineficiência de tráfego em comparação aos outros modelos.
-
-A @fig:rho_vs_tempo_com_e_sem_adaptação compara a eficiência das três redes quando submeditdas a diferentes valores $rho$ e com/sem o método @sec:adaptação_capacidade_elos da adaptação da capacidade dos elos, se observa como o método mantem a rede no estado não congestionado mesmo para valores altos de $rho approx 0.2$.
+A @fig:rho_vs_tempo_com_e_sem_adaptação compara a eficiência das três redes quando submeditdas a diferentes valores $rho$ e com/sem o método da @sec:adaptação_capacidade_elos da adaptação da capacidade dos elos, se observa como o método mantem a rede no estado não congestionado mesmo para valores altos de $rho approx 0.2$.
 
 #figure(
   image("assets/plots/p_critico_travel_adapted_capacity.svg"),
@@ -554,11 +556,12 @@ A @fig:rho_vs_tempo_com_e_sem_adaptação compara a eficiência das três redes 
 A @fig:rho_critico_custo mostra a capacidade total por aresta de cada rede e taxa de geração, esse valor está diretamente ligado com o custo da rede, é interessante ver que o custo não aumentou linearmente com o $rho_c$, o método com o dobro da capacidade conseguiu encontrar uma configuração que aumentou o $rho_c$ não somente pelo dobro.
 
 #align(center)[
+  #box(width: 50%)[
   #figure(
     image("assets/plots/p_critico_capacity_adapted_capacity.svg"),
     caption: [Custo da configuração de capacidades \
       da rede para diferentes taxas de geração ],
-  ) <fig:rho_critico_custo>
+  ) <fig:rho_critico_custo>]
 ]
 
 
@@ -566,7 +569,7 @@ A @fig:rho_critico_custo mostra a capacidade total por aresta de cada rede e tax
 
 As análises nas seções anteriores eram baseadas em roteamento por caminhos mínimos, isso porque esse é o tipo de roteamento mais desejado, pois ele minimiza o tempo de entrega dos pacotes, e também, pela sua previsibilidade, vários resultados analíticos interessantes são conhecidos.
 
-Porém, na prática nem sempre é possível que todos os nós tenham informação sobre a rede a ponto de calcularem mínimos caminhos, o próprio simulador desenvolvido nesse trabalho não consegue escalar para redes de dezenas de milhares de nós. Nesse caso, roteamento de visibilidade limitada são considerados, os três roteamentos descritos na @sec:formalização_modelo_trafego serão vistos como um roteamento de visibilidade limitada $k$ em três situações distintas, como descrito na @table:visibilidade_limitada, podemos fazer gráficos com um dos eixos sendo $k$ e dessa forma analisar os três roteamentos ao mesmo tempo
+Porém, na prática nem sempre é possível que todos os nós tenham informação sobre a rede para calcularem mínimos caminhos, o próprio simulador desenvolvido nesse trabalho não consegue escalar para redes de dezenas de milhares de nós. Nesse caso, roteamentos de visibilidade limitada são considerados, os três roteamentos descritos na @sec:formalização_modelo_trafego serão vistos como um roteamento de visibilidade limitada $k$ em três situações distintas, como descrito na @table:visibilidade_limitada, podemos fazer gráficos com um dos eixos sendo $k$ e dessa forma analisar os três roteamentos ao mesmo tempo
 #v(10pt)
 #figure(
   align(center)[
@@ -579,8 +582,8 @@ Porém, na prática nem sempre é possível que todos os nós tenham informaçã
         fill: (x, y) => if y == 0 { gray.lighten(85%) } else { gray.lighten(96%) },
         table.header([*Visibilidade ($k$)*], [*Interpretação*]),
         [*$k = 0$*], [Passeio aleatório],
-        [*$0 < k < d$*], [Visibilidade limitada],
-        [*$k = d$*], [Caminhos mínimos],
+        [*$0 < k < "diam"(G)$*], [Visibilidade limitada],
+        [*$k = "diam"(G)$*], [Caminhos mínimos],
       )
     ]
   ],
@@ -589,7 +592,7 @@ Porém, na prática nem sempre é possível que todos os nós tenham informaçã
 #v(10pt)
 
 
-Para gerar grafos com diferentes valores de diâmetro e distribuição de distâncias, o mesmo método da @fig:watts_strogatz_classico de utilizar diferentes valores de $beta$ no modelo de Watts-Strogatz será usado, como ilustrado na @fig:visibilidade_limitada_grid. Os histogramas deixam claro porque  $chevron.l L chevron.r$ sozinho não é suficiente para descrever toda a dinâmica de roteamento, a variança dos histogramas alta, tornando a média por si só insuficiente para descrever a dinâmica.
+Para gerar grafos com diferentes valores de diâmetro e distribuição de distâncias, o mesmo método da @fig:watts_strogatz_classico de utilizar diferentes valores de $beta$ no modelo de Watts-Strogatz será usado, como ilustrado na @fig:visibilidade_limitada_grid. Os histogramas deixam claro porque  $chevron.l L chevron.r$ sozinho não é suficiente para descrever toda a dinâmica de roteamento, a variança dos histogramas É=é alta, tornando a média por si só insuficiente para descrever a dinâmica.
 
 #figure(
   align(center)[
@@ -603,7 +606,7 @@ Para gerar grafos com diferentes valores de diâmetro e distribuição de distâ
   ],
 ) <fig:visibilidade_limitada_grid>
 
-Um resultado interessante é que $k$ não necessariamente precisa ser próximo de $d$ para que o roteamento se comporte de maneira parecida a mínimos caminhos. A eficiência é determinada pela distribuição de distâncias, mais especificamente pela função cumulativa de distâncias. Se somente uma porcentagem muito pequena dos pares $(s,t)$ está a distâncias maiores do que $k$, então na maioria das vezes a visibilidade é suficiente para encontrar um caminho mínimo, mesmo que não seja próximo do diâmetro.
+Um resultado interessante é que $k$ não necessariamente precisa ser próximo de $"diam"(G)$ para que o roteamento se comporte de maneira parecida a mínimos caminhos. A eficiência é determinada pela distribuição de distâncias, mais especificamente pela função cumulativa de distâncias. Se somente uma porcentagem muito pequena dos pares $(s,t)$ está a distâncias maiores do que $k$, então na maioria das vezes a visibilidade é suficiente para encontrar um caminho mínimo, mesmo que não seja próximo do diâmetro.
 
 = CONCLUSÕES E CONSIDERAÇÕES FINAIS
 
