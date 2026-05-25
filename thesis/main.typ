@@ -38,7 +38,7 @@
 //invariantes sobre a seção de resumo
 #word-count(wc => {
   assert(wc.words < 500, message: "Resumo com mais de 500 palavras")
-  assert(resumo_conteudo.func() == par, message: "Resumo deve ser somente um paragráfo")
+  assert(resumo_conteudo.func() == par, message: "Resumo deve ser somente um parágrafo")
   let resumo_verificado = {
     show math.equation: it => panic("O resumo não deve conter equações matemáticas.")
     show cite: it => panic("O resumo não deve conter citações.")
@@ -84,8 +84,7 @@ Dois vértices $u, v in V$ são ditos *adjacentes* se existir uma aresta ${u, v}
 
 Um *caminho* entre dois vértices $s, t in V$ é definido como uma sequência de vértices $P = (v_0, v_1, ..., v_k)$ tal que $v_0 = s$, $v_k = t$, e para todo $i$ tal que $0 <= i < k$  ${v_i, v_{i+1}} in E$. O *comprimento* do caminho é dado por $k$, que corresponde ao número de arestas na sequência. É importante notar que tal caminho pode não existir; nesse caso, diz-se que $t$ é inatingível a partir de $s$. Um grafo é dito *conexo* se, para todo par de vértices, existe pelo menos um caminho que os conecta, caso contrário, o grafo é classificado como *desconexo*.
 
-Um *caminho mínimo* entre dois vértices $s$ e $t$ é um caminho cujo comprimento $k$ é o menor possível dentre todos os caminhos existentes entre esses vértices. Ressalta-se que um caminho mínimo não é necessariamente único.  A *distância* entre $s$ e $t$, denotada por $d(s, t)$, é definida como o comprimento desse caminho mínimo. Convenciona-se que, caso não exista caminho entre $s$ e $t$, $d(s, t) := infinity$.
-#footnote[Em implementações computacionais, sistemas que utilizam a representação de ponto flutuante segundo o padrão IEEE 754
+Um *caminho mínimo* entre dois vértices $s$ e $t$ é um caminho cujo comprimento $k$ é o menor possível dentre todos os caminhos existentes entre esses vértices. Ressalta-se que um caminho mínimo não é necessariamente único.  A *distância* entre $s$ e $t$, denotada por $d(s, t)$, é definida como o comprimento desse caminho mínimo. #footnote[Em algumas situações convenciona-se que, caso não exista caminho entre $s$ e $t$, $d(s, t) := infinity$, em implementações computacionais, sistemas que utilizam a representação de ponto flutuante segundo o padrão IEEE 754
   @IEEEStandardFloatingPoint2019 possuem uma representação de infinito com propriedades desejáveis para vértices inatingíveis.]
 
 A partir da definição de caminhos mínimos, derivam-se duas métricas topológicas fundamentais para a caracterização do modelo de tráfego. A primeira é a *distância média* $chevron.l L chevron.r$, que representa o valor esperado do comprimento do caminho mínimo entre dois vértices quaisquer da rede.
@@ -357,7 +356,7 @@ Desta forma, $delta$ atua como um *parâmetro de ordem*: valores próximos de ze
 Diferentes técnicas de otimizações são possíveis, cada uma priorizando uma característica distinta do que se abstratamente pensa como "eficiência" (minimização da capacidade total, atraso, distância percorrida), algumas das principais formas são:
 
 - Políticas de filas: O modelo padrão assume uma fila do tipo _First in First Out_ (FIFO), porém, outras políticas são possíveis usando prioridades arbitrarias, as quais podem ser "injustas" e atrasar pacotes individuais, mas que globalmente melhoram a eficiência da rede @wuInnovativePriorityQueueing2025.
-- Roteamentos dinâmicos: Os roteamentos mencionados nesse trabalhos são todos estáticos, ou seja, independente da dinâmica do sistemas as mensagens possuem o mesmo comportamento de trafego, é possível utilizar roteamentos que por exemplo selecionam mínimos caminhos não de forma uniforme mas que minimizam o tamanho das filas das arestas intermediárias, sendo geralmente mais eficientes do que roteamentos estátisticos ao custo de complexidade de implementação teórica e prática.
+- Roteamentos dinâmicos: Os roteamentos mencionados nesse trabalhos são todos estáticos, ou seja, independente da dinâmica do sistemas as mensagens possuem o mesmo comportamento de trafego, é possível utilizar roteamentos que por exemplo selecionam mínimos caminhos não de forma uniforme mas que minimizam o tamanho das filas das arestas intermediárias, sendo geralmente mais eficientes do que roteamentos estatísticos ao custo de complexidade de implementação teórica e prática.
 - Adição/Remoção de arestas: Uma forma de otimizar a rede consisti em realizar pequenas mudanças topologias adicionando ou até mesmo removendo arestas.
 
 == Adaptação da capacidade dos elos <sec:adaptação_capacidade_elos>
@@ -376,11 +375,16 @@ Dado uma taxa mínima desejado para o fluxo livre, denotado por $eta$, uma quest
 
 Um algoritmo local heurístico que até o conhecimento do autor é inovador, é descrito logo em seguida:
 
-Dado um intervalo de tempo $Delta T$ suficientemente longo para o sistema atingir o equilíbrio, para cada aresta calcula-se nesse intervalo de tempo o histograma de número de mensagens recebidos, a partir desse histograma é atualizada a capacidade tal forma a ser a mínima capacidade necessária para atingir a FFR desejada durante o intervalo $Delta T$:
+Dado um intervalo de tempo $Delta T_("amostragem")$ suficientemente longo para o sistema atingir o equilíbrio, para cada aresta calcula-se nesse intervalo de tempo o histograma de número de mensagens recebidos,
+a partir desse histograma a capacidade é atualizada usando a seguinte formula:
 
-$ C_e = min {C in ZZ^+ : F_e (C) >= eta}, quad forall e in E. $ <eq:metodo>
+$ C_e -> sqrt(C_e times min {C in ZZ^+ : F_e (C) >= eta}) $<eq:método>
 
-Este procedimento atua como uma *heurística*, visto que a alteração da capacidade de uma única aresta pode influenciar a distribuição de tráfego em toda a rede. No entanto, ao aplicar iterativamente a @eq:metodo e permitir que o sistema se estabilize novamente em intervalos sucessivos $Delta T$, observa-se empiricamente a convergência para uma configuração estável que satisfaz a restrição de FFR enquanto tem uma capacidade total não muito grande.
+A intuição por trás dessa fórmula é que a capacidade de cada aresta é ajustada para ser a média geométrica entre a capacidade atual e a capacidade mínima necessária para satisfazer a restrição de FFR. A média geométrica é utilizado para suavizar as mudanças na capacidade, atuando como uma certa forma de "inércia",evitando oscilações abruptas que ocorrerem se a capacidade é ajustada diretamente para o valor mínimo necessário. A média geométrica foi escolhida pois se observa uma variação de ordens de grandeza na quantidade de mensagens que passam por cada aresta, portanto, esse tipo de média consegue representar melhor valores intermediários do que a média aritmética, que tenderia a estimar valores altos de capacidade.
+
+
+
+Este procedimento atua como uma *heurística*, visto que a alteração da capacidade de uma única aresta pode influenciar a distribuição de tráfego em toda a rede. No entanto, ao aplicar iterativamente a @eq:método e permitir que o sistema se estabilize novamente em múltiplos intervalos sucessivos $Delta T_("amostragem")$, observa-se empiricamente a convergência para uma configuração estável que satisfaz a restrição de FFR enquanto tem uma capacidade total não muito grande.
 
 Uma das vantagens desse método é por ele ser local, cada aresta só precisa de informação do seu próprio trafego observado, o que é uma características que torna a heurística escalável para redes de virtualmente qualquer tamanho.
 
@@ -406,7 +410,7 @@ A @fig:rho_vs_atraso mostras as estimativas das taxas críticas $rho_c$ como lin
 #let topology_to_color = (
   "Barabási–Albert": red,
   "Erdős–Rényi": blue,
-  "Rede Geométrica": olive,
+  "Geométrica Aleatória": olive,
   "Watts–Strogatz": purple,
 )
 
@@ -415,7 +419,7 @@ A @fig:rho_vs_atraso mostras as estimativas das taxas críticas $rho_c$ como lin
 }
 
 #let table_p_critico_df = table(
-  columns: (1.6fr, 1fr, 1fr, 1fr, 1fr, 1fr),
+  columns: (2fr, 1fr, 1fr, 1fr, 1fr, 1fr),
   align: (left, center, center, center, center, center, center),
   table.hline(stroke: 1pt),
   table.header([*Grafo*], [*$N$*], [*$E$*], [*$chevron.l L chevron.r$*], [*$C$*], [*diam*]),
@@ -456,20 +460,20 @@ A @fig:rho_vs_atraso mostras as estimativas das taxas críticas $rho_c$ como lin
   ],
   label: <fig:rho_vs_atraso>,
 )
-#v(20pt)
 
 A @fig-viagem mostra que distância média da rede é um fator  importante na sua eficiência, no regime de baixa geração de mensagens $p_c approx 0$, mesmo que o atraso seja próximo de nulo para todos os grafos
 , o tempo médio de viagem dos pacotes é numericamente igual a $chevron.l L chevron.r$.
 
 Afim de melhor entender as diferenças entres os grafos, na @fig:intermediação_vs_mensagens foi comparada a quantidade de mensagens recebidas em cada aresta em função da sua intermediação para um geração de mensagens fixa.
-É interessante observar como que para os grafos simulados a intermediação varia em cerca de 3 ordens de grandeza $b_e in [10^(-6),10^(-3)]$ , com a equação @eq:mensagem_estimada_e que estabele uma relação linear entre quantidade de mensagens e intermediação, isso demostra como certas arestas recebem muito mais mensagens do que outras, e portanto, são mais "importantes"
+É interessante observar como que para os grafos simulados a intermediação varia em cerca de 3 ordens de grandeza $b_e in [10^(-6),10^(-3)]$ , com a equação @eq:mensagem_estimada_e que estabelece uma relação linear entre quantidade de mensagens e intermediação, isso demostra como certas arestas recebem muito mais mensagens do que outras, e portanto, são mais "importantes"
 estruturalmente do que outras.
 
-Pela @eq:mensagem_estimada_e é esperado que o coeficiente linear da regressão intermediação por número de mensagens seja $B(N,rho)$, no caso particular simulado  em que $N=5000$ e $rho=0.01$, é esperado $alpha=50$, que é bem próximo do valor observado na da tabela da @fig:intermediação_vs_mensagens.
+Pela @eq:mensagem_estimada_e é esperado que o coeficiente linear da regressão intermediação por número de mensagens seja $B(N,rho)$, no caso particular simulado  em que $N=5000$ e $rho=0.01$, é esperado $alpha=50$, que é bem próximo do valor observado na da tabela da @fig:intermediação_vs_mensagens. As correlações não são exatas devido ao carácter aleatório do processo e também pelo número de mensagens ser uma quantidade discreta, a discretização é observar nos gráficos através das faixas horizontais de mensagens.
 
 #let betweeness_vs_messages = csv(
   "assets/tables/betweeness_vs_messages.csv",
 )
+
 
 #let parse-sci-string(s) = {
   let parts = s.split("e")
@@ -483,7 +487,7 @@ Pela @eq:mensagem_estimada_e é esperado que o coeficiente linear da regressão 
 }
 
 #let table_betweeness_vs_messages = table(
-  columns: (1fr, 1fr, 1.3fr),
+  columns: (1.5fr, 1fr, 1.3fr),
   align: (left, center, center, center),
   table.hline(stroke: 1pt),
   table.header([*Grafo*], [*$R^2$*], [*$alpha plus.minus Delta alpha$*]),
@@ -530,7 +534,7 @@ Esses comportamentos são ilustrados na @fig:watts_strogatz_classico.
     #cite(<wattsCollectiveDynamicsSmallworld1998>, form: "prose"), demonstrando a possibilidade de gerar grafos aleatórios com diferentes valores de $chevron.l L chevron.r$],
 ) <fig:watts_strogatz_classico>
 
-Realizando simulações em grafos Watts-Strogatz com diferentes valores de $beta$, conseguentemente diferentes valores de $chevron.l L chevron.r$, se observa na @fig:watts_messages_vs_time uma concordância com o número de mensagens esperado com a média e o desvio padrão teóricos, o número de mensagens oscila entorno de uma média com uma amplitude de oscilação dentro do esperado pelo desvio padrão.
+Realizando simulações em grafos Watts-Strogatz com diferentes valores de $beta$, consequentemente diferentes valores de $chevron.l L chevron.r$, se observa na @fig:watts_messages_vs_time uma concordância com o número de mensagens esperado com a média e o desvio padrão teóricos, o número de mensagens oscila entorno de uma média com uma amplitude de oscilação dentro do esperado pelo desvio padrão.
 
 #figure(
   image(
@@ -542,27 +546,28 @@ Realizando simulações em grafos Watts-Strogatz com diferentes valores de $beta
 ) <fig:watts_messages_vs_time>
 
 == Com adaptação das capacidades
-Os resultados obtidos na seção anterior (@section:sem_adaptacao) suponham que todos as aresta tinham capacidade unitaria constante no tempo, agora o método descrito na seção (@sec:adaptação_capacidade_elos) de adaptação das capacidades dada o tráfego será o usado. O modelo de rede geométrica foi desconsiderado nessa seção, pois os resultados anteriores demonstram o seu enorme $chevron.l L chevron.r$ e conseguemente ineficiência de tráfego em comparação aos outros modelos.
+Os resultados obtidos na seção anterior (@section:sem_adaptacao) suponham que todos as aresta tinham capacidade unitária constante no tempo, agora o método descrito na seção (@sec:adaptação_capacidade_elos) de adaptação das capacidades dada o tráfego será o usado.
+A @fig:rho_vs_tempo_com_e_sem_adaptação compara a eficiência das quatro redes quando submetidas a diferentes valores $rho$ e com/sem o método da @sec:adaptação_capacidade_elos da adaptação da capacidade dos elos, se observa como o método mantém a rede no estado não congestionado até mesmo para o valor máximo teórico de $rho=1$.
 
-A @fig:rho_vs_tempo_com_e_sem_adaptação compara a eficiência das três redes quando submeditdas a diferentes valores $rho$ e com/sem o método da @sec:adaptação_capacidade_elos da adaptação da capacidade dos elos, se observa como o método mantem a rede no estado não congestionado mesmo para valores altos de $rho approx 0.2$.
-
-#figure(
-  image("assets/plots/p_critico_travel_adapted_capacity.svg"),
-  caption: [Comparação da eficiência das mesmas \
-    redes com/sem adaptação da capacidades das arestas],
-) <fig:rho_vs_tempo_com_e_sem_adaptação>
-
-
-A @fig:rho_critico_custo mostra a capacidade total por aresta de cada rede e taxa de geração, esse valor está diretamente ligado com o custo da rede, é interessante ver que o custo não aumentou linearmente com o $rho_c$, o método com o dobro da capacidade conseguiu encontrar uma configuração que aumentou o $rho_c$ não somente pelo dobro.
-
+#align(center)[
+  #box(width: 80%)[
+    #figure(
+      image("assets/plots/p_critico_travel_adapted_capacity.svg"),
+      caption: [Comparação da eficiência das mesmas redes com/sem adaptação da  capacidades das arestas ($T_("amostragem")=100$, $eta=0.99$ )],
+    ) <fig:rho_vs_tempo_com_e_sem_adaptação>]
+]
 #align(center)[
   #box(width: 50%)[
     #figure(
       image("assets/plots/p_critico_capacity_adapted_capacity.svg"),
-      caption: [Custo da configuração de capacidades \
-        da rede para diferentes taxas de geração ],
+      caption: [Custo da configuração de capacidades das redes],
     ) <fig:rho_critico_custo>]
 ]
+
+A @fig:rho_critico_custo mostra a capacidade total por aresta de cada rede e taxa de geração, esse valor está diretamente ligado com o custo da rede, é interessante ver que o custo não aumentou linearmente com o $rho_c$, o método para todas as redes com exceção da rede geométrica aleatória conseguiu com somente aproximadamente 4 vezes a capacidade inicial, manter a rede no estado não congestionado
+até mesmo para o valor máximo do modelo $rho=1$.
+
+
 
 
 == Diferentes roteamentos
@@ -570,7 +575,7 @@ A @fig:rho_critico_custo mostra a capacidade total por aresta de cada rede e tax
 As análises nas seções anteriores eram baseadas em roteamento por caminhos mínimos, isso porque esse é o tipo de roteamento mais desejado, pois ele minimiza o tempo de entrega dos pacotes, e também, pela sua previsibilidade, vários resultados analíticos interessantes são conhecidos.
 
 Porém, na prática nem sempre é possível que todos os nós tenham informação sobre a rede para calcularem mínimos caminhos, o próprio simulador desenvolvido nesse trabalho não consegue escalar para redes de dezenas de milhares de nós. Nesse caso, roteamentos de visibilidade limitada são considerados, os três roteamentos descritos na @sec:formalização_modelo_trafego serão vistos como um roteamento de visibilidade limitada $k$ em três situações distintas, como descrito na @table:visibilidade_limitada, podemos fazer gráficos com um dos eixos sendo $k$ e dessa forma analisar os três roteamentos ao mesmo tempo
-#v(10pt)
+
 #figure(
   align(center)[
     #box(width: 75%)[
@@ -589,37 +594,63 @@ Porém, na prática nem sempre é possível que todos os nós tenham informaçã
   ],
   caption: [Relação entre $k$ e os três roteamentos],
 ) <table:visibilidade_limitada>
-#v(10pt)
+
+Será analisado um grafo de diâmetro grande para que seja possível variar a visibilidade em um intervalo maior de possibilidades, foi escolhido um grafo de Watts-Strogatz com $N=3000$, $k=6$ e $beta=0.01$. O histograma da @fig:visibilidade_limitada_histograma deixa claro porque  $chevron.l L chevron.r$ sozinho não é suficiente para descrever toda a dinâmica de roteamento, a variança do histograma é alta, tornando a média por si só insuficiente.
 
 
-Para gerar grafos com diferentes valores de diâmetro e distribuição de distâncias, o mesmo método da @fig:watts_strogatz_classico de utilizar diferentes valores de $beta$ no modelo de Watts-Strogatz será usado, como ilustrado na @fig:visibilidade_limitada_grid. Os histogramas deixam claro porque  $chevron.l L chevron.r$ sozinho não é suficiente para descrever toda a dinâmica de roteamento, a variança dos histogramas é alta, tornando a média por si só insuficiente para descrever a dinâmica.
 
 #figure(
   align(center)[
     #box(
       figure(
         image("assets/plots/visibilidade_limitada_grid.svg"),
-        caption: [Distribuição de distâncias de diferentes grafos Watts-Strogatz],
+        caption: [Distribuição de distâncias de um grafo Watts-Strogatz\ ($N=3000$, $k=6$, $beta=0.01$)],
       ),
-      width: 80%,
+      width: 45%,
     )
   ],
-) <fig:visibilidade_limitada_grid>
+) <fig:visibilidade_limitada_histograma>
 
-Um resultado interessante é que $k$ não necessariamente precisa ser próximo de $"diam"(G)$ para que o roteamento se comporte de maneira parecida a mínimos caminhos. A eficiência é determinada pela distribuição de distâncias, mais especificamente pela função cumulativa de distâncias. Se somente uma porcentagem muito pequena dos pares $(s,t)$ está a distâncias maiores do que $k$, então na maioria das vezes a visibilidade é suficiente para encontrar um caminho mínimo, mesmo que não seja próximo do diâmetro.
+A @fig:visibilidade_limitada mostra como o método de adaptação de capacidades é robusto a mudanças no roteamento, refletindo na capacidade alocada a quantidade de mensagens esperadas.
+
+- $k approx 0$: O roteamento é um passeio aleatório, nesse cenário toda aresta  independentemente de sua posição na rede é igualmente provável de receber mensagens, por isso a não correlação das capacidades com a intermediação de aresta, as capacidades se distribuem de maneira uniforme, por isso $sigma/mu approx 0$ do histograma das capacidades.
+
+- $0 < k < "diam"(G)$: É um roteamento de visibilidade  limitada, o comportamento é intermediário, exibindo capacidades que fracamente correlacionam com a intermediação (caminhos mínimos) e que oscilam próximas de uma média (passeio aleatório).
+
+- $k approx "diam(G)"$: o comportamento é muito próximo do roteamento por mínimos caminhos, as capacidades se correlacionam fortemente com a intermediação de aresta, como esperado.
+
+Um resultado interessante é que $k$ não necessariamente precisa ser próximo de $"diam"(G)$ para que o roteamento se comporte de maneira parecida a mínimos caminhos, na @fig:visibilidade_limitada o ponto de transição é em $k approx 30$, mesmo que o diâmetro do grafo seja cerca de 60.
+Isso ocorre pois a eficiência é determinada pela distribuição de distâncias, mais especificamente pela função cumulativa de distâncias, se somente uma porcentagem muito pequena dos pares $(s,t)$ está a distâncias maiores do que $k$, então na maioria das vezes a visibilidade é suficiente para encontrar um caminho mínimo.
+
+
+#figure(
+  align(center)[
+    #box(
+      figure(
+        image("assets/plots/visibilidade_limitada_correlations.svg"),
+        caption: [Adaptação das capacidades para
+          diferentes visibilidades ($rho=0.1$, $T_("amostragem")=100$, $eta=0.99$) ],
+      ),
+      width: 75%,
+    )
+  ],
+) <fig:visibilidade_limitada>
+
+
+
+
 
 = CONCLUSÕES E CONSIDERAÇÕES FINAIS
 
-Neste trabalho, compararam-se alguns resultados teóricos referentes à quantidade total de mensagens (@eq:media_mensagens) na rede e também por aresta (@eq:mensagem_estimada_e) com o simulador desenvolvido (_GraphTraffic-rs_). Tais resultados provaram-se verdadeiros, mesmo que originalmente pensados para um modelo de tráfego com os vértices tendo uma capacidade $C$, e não as arestas, como foi usado neste trabalho. A simples mudança teórica da intermediação de um vértice para a menos conhecida intermediação de aresta provou-se suficiente.
+Neste trabalho, compararam-se alguns resultados teóricos referentes à quantidade total de mensagens (@eq:media_mensagens) na rede e também por aresta (@eq:mensagem_estimada_e) com o simulador desenvolvido (_GraphTraffic-rs_). Tais resultados provaram-se verdadeiros, mesmo que originalmente pensados para um modelo de tráfego com os vértices tendo uma capacidade $C$, e não as arestas, como foi usado neste trabalho. A simples mudança teórica da intermediação de um vértice para intermediação de aresta provou-se suficiente.
 
 Dos quatro modelos de redes testadas, o modelo de grafo geométrico aleatório provou-se muito ineficiente, com uma taxa crítica de mensagens $rho_c$ cerca de uma a duas ordens de grandeza menor quando comparada com os demais, evidenciando como a topologia influencia no tráfego, mesmo que os grafos testados tenham aproximadamente o mesmo número de nós $N$ e arestas $E$.
 
 Grandezas como a centralidade de intermediação de aresta e a distância média demonstraram ser fortes preditores da eficiência de uma rede. Baixos valores de distância média e de intermediação de arestas caracterizam grafos ideais para a troca de pacotes.
 
-A heurística proposta para a alocação não uniforme de capacidades das arestas, baseada no histograma empírico do número de mensagens, mostrou-se eficaz em aumentar a geração crítica e reduzir atrasos. As capacidades alocadas correlacionam-se com a intermediação de aresta, mesmo que o método não exija explicitamente esse cálculo, mostrando que, utilizando somente informações locais, pode-se obter resultados para os quais, a princípio, seriam necessárias informações globais da rede.
+A heurística proposta para a alocação não uniforme de capacidades das arestas, baseada no histograma empírico do número de mensagens, mostrou-se eficaz em manter a rede em estado não crítico e reduzir atrasos. As capacidades alocadas se ajustam conforme o roteamento, exibindo correlação com a intermediação de aresta em caso de mínimos caminhos e um valor constante em um passeio aleatório, demostrando que, utilizando somente informações locais, pode-se obter resultados para os quais a princípio seriam necessárias informações globais da rede e da dinâmica do roteamento.
 
-Como sugestões para trabalhos futuros, recomendam-se um estudo teórico mais aprofundado da heurística de adaptação das capacidades das arestas, analisando como o tempo de amostragem $T$ e o _FFR_ influenciam na otimização final. 
-
+Como sugestões para trabalhos futuros, recomendam-se um estudo teórico mais aprofundado da heurística de adaptação das capacidades das arestas, analisando como o tempo de amostragem $T_("amostragem")$ e o _FFR_ influenciam na otimização final.
 #bibliography(
   "zotero.bib",
   title: [REFERÊNCIAS],

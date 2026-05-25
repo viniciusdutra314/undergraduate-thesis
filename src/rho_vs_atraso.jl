@@ -21,7 +21,6 @@ using LaTeXStrings
 
 
 const iterations = 1_000
-const rhos = range_logarithmic(start=1e-3, stop=1.0, length=100)
 const rho_for_betweeness = 1e-2
 const hdf5_filename::String = "varying_message_generation"
 
@@ -237,6 +236,7 @@ end
 function plot()
     df_efficiency = __preprocess_data()
     df_betweeness = __preprocess_betweeness_data()
+    println(df_betweeness)
     df_rho_critico_estimado = DataFrame(graph_type=String[], rho_critico_estimado=Float64[])
     N = GraphTraffic.SharedData.N
     for row in eachrow(df_betweeness)

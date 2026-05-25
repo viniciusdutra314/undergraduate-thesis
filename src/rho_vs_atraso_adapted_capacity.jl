@@ -21,9 +21,8 @@ using LaTeXStrings
 
 
 const sampling_time = 100
-const num_samplings = 200
+const num_samplings = 25
 const iterations = num_samplings * sampling_time
-const rhos = range_logarithmic(start=1e-2, stop=0.2, length=20)
 const free_flow_rate::Float64 = 0.99
 const minimal_capacity::Int = 1
 const multiplier::Float64 = 1
@@ -31,10 +30,10 @@ const hdf5_filename::String = "varying_message_generation_adapted_capacity"
 
 function generate_data()
     simulations::GraphTraffic.Schema.SimulationConfiguration = []
-    barabasi, erdos, watts = connect_and_compare_graphs(
-        barabasi_graph, erdos_graph, watts_graph
+    barabasi, erdos, watts, rgg = connect_and_compare_graphs(
+        barabasi_graph, erdos_graph, watts_graph, rgg_graph
     )
-    for (graph_type, g) in [(barabasi_name, barabasi), (erdos_name, erdos), (watts_name, watts)]
+    for (graph_type, g) in [(barabasi_name, barabasi), (erdos_name, erdos), (watts_name, watts), (rgg_name, rgg)]
         graph_filename::String = temp_save_edgelist(g)
         for rho in rhos
             push!(simulations, SimulationConfigurationItem(uuid=UUIDs.uuid4(),
@@ -42,7 +41,7 @@ function generate_data()
                 graph_file_name=graph_filename,
                 message_generation=rho,
                 max_iterations=iterations,
-                warm_up_iterations=Int(0.9 * iterations),
+                warm_up_iterations=Int(20 * sampling_time),
                 graph_generation_info=Dict("graph_type" => graph_type, "is_adapted_capacity" => true),
                 modifiers=[ModifierEdgeCapacity(free_flow_rate, sampling_time,
                     minimal_capacity, multiplier)],
@@ -96,13 +95,13 @@ function plot()
     df = __preprocess_data()
     sort!(df, [:graph_type, :msg_generation])
     fig_traveling_time = Figure(size=(900, 550))
-    fig_capacity = Figure(size=(450, 550))
+    fig_capacity = Figure(size=(500, 500))
     xlabel = L"Geração de mensagens ($\rho$)"
     ylabel_traveling_time = "Tempo médio de viagem"
     ax_capacity = Axis(fig_capacity[1, 1];
         xlabel=xlabel,
-        ylabel="Capacidade total por aresta",
-        log_x_style...,
+        ylabel="Capacidade média",
+        log_x_log_y_style...,
     )
 
     ax_traveling_time_adapted = Axis(fig_traveling_time[1, 1];
@@ -127,11 +126,11 @@ function plot()
         traveling_time_axis = is_adapted ? ax_traveling_time_adapted : ax_traveling_time_not_adapted
         scatter!(traveling_time_axis, sub_df.msg_generation, sub_df.avg_traveling_time,
             color=color, label=graph_type)
-        errorbars!(ax_capacity, sub_df.msg_generation, sub_df.mean_capacity_over_E, sub_df.std_capacity_over_E,
-            color=color, alpha=0.35)
         if is_adapted
             scatter!(ax_capacity, sub_df.msg_generation, sub_df.mean_capacity_over_E,
                 color=color, label=graph_type)
+            errorbars!(ax_capacity, sub_df.msg_generation, sub_df.mean_capacity_over_E, sub_df.std_capacity_over_E,
+                color=color, alpha=0.35)
         end
     end
     hlines!(ax_capacity, 1.0, color=:black, linestyle=:dash, label="Capacidade fixa")

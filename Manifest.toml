@@ -2018,7 +2018,7 @@ uuid = "8e850ede-7688-5339-a07c-302acd2aaf8d"
 version = "1.64.0+1"
 
 [[deps.notebook_julia]]
-deps = ["CSV", "CairoMakie", "DataFrames", "Graphs", "HDF5", "IGraphs", "JSON", "LaTeXStrings", "LsqFit", "Makie", "Statistics", "StatsBase", "StructTypes", "UUIDs"]
+deps = ["CSV", "CairoMakie", "DataFrames", "Graphs", "HDF5", "IGraphs", "JSON", "LaTeXStrings", "LsqFit", "Makie", "NPZ", "Statistics", "StatsBase", "StructTypes", "UUIDs"]
 path = "."
 uuid = "a4914e17-2728-4d66-be79-cfd3a11153fb"
 version = "0.1.0"

@@ -4,7 +4,7 @@ export Engine, Topology, Analysis, Schema, Style, SharedData
 module Style
 export topology_to_color, log_x_log_y_style, log_x_style
 using CairoMakie
-const topology_to_color::Dict{String,String} = Dict("Barabási–Albert" => "red", "Erdős–Rényi" => "blue", "Rede Geométrica Aleatória" => "green", "Watts–Strogatz" => "purple")
+const topology_to_color::Dict{String,String} = Dict("Barabási–Albert" => "red", "Erdős–Rényi" => "blue", "Geométrica Aleatória" => "green", "Watts–Strogatz" => "purple")
 const log_x_log_y_style = (
     xscale=log10,
     yscale=log10,
@@ -134,22 +134,25 @@ const raw_results_folder = normpath(@__DIR__, "..", "raw_results")
 
 function run_rust_cli(config::SimulationConfiguration, filename::String; num_threads::Union{Integer,Nothing}=nothing,
     force_overwrite::Bool=false)
-    run(`cargo install --git https://github.com/viniciusdutra314/GraphTraffic-rs --rev ed127dcdd65aeeca5f25765a695a08a6dcfd21cf --locked`)
-    mktempdir() do temp_path
-        temp_json_filename::String = joinpath(temp_path, "config.json")
-        open(temp_json_filename, "w") do io
-            JSON.json(io, config; pretty=true, omit_null=true)
+    cd(normpath(@__DIR__, "..", "GraphTraffic-rs")) do
+        run(`cargo test`)
+        run(`cargo build --release`)
+        mktempdir() do temp_path
+            temp_json_filename::String = joinpath(temp_path, "config.json")
+            open(temp_json_filename, "w") do io
+                JSON.json(io, config; pretty=true, omit_null=true)
+            end
+            complete_filename = joinpath(raw_results_folder, filename * ".hdf5")
+            cli_cmd = `./target/release/graph_traffic $temp_json_filename`
+            cli_cmd = `$cli_cmd --output-file-hdf5 $complete_filename`
+            if !isnothing(num_threads)
+                cli_cmd = `$cli_cmd --threads $num_threads`
+            end
+            if force_overwrite
+                cli_cmd = `$cli_cmd --force`
+            end
+            run(cli_cmd)
         end
-        complete_filename = joinpath(raw_results_folder, filename * ".hdf5")
-        cli_cmd = `graph_traffic $temp_json_filename`
-        cli_cmd = `$cli_cmd --output-file-hdf5 $complete_filename`
-        if !isnothing(num_threads)
-            cli_cmd = `$cli_cmd --threads $num_threads`
-        end
-        if force_overwrite
-            cli_cmd = `$cli_cmd --force`
-        end
-        run(cli_cmd)
     end
 end
 
@@ -299,33 +302,6 @@ end
 
 end
 
-module SharedData
-using Graphs
-using ..Topology: LazyGraph,
-    random_geometric_graph, watts_strogatz_given_m
-using CairoMakie
-export erdos_name, barabasi_name, rgg_name, watts_name,
-    barabasi_graph, erdos_graph, rgg_graph, watts_graph, βs_watts, N_watts, E_watts, watts_cmap
-N = 5000
-M = 3
-E = N * M
-β = 0.1
-βs_watts = [2.5e-3, 5e-3, 1e-2, 5e-2]
-N_watts = 3_000
-E_watts = 9_000
-watts_cmap = cgrad(cgrad(:inferno)[range(0, 0.75, length=256)])
-
-barabasi_graph = LazyGraph(barabasi_albert, (N, M))
-erdos_graph = LazyGraph(erdos_renyi, (N, E))
-rgg_graph = LazyGraph(random_geometric_graph, (N, E))
-watts_graph = LazyGraph(watts_strogatz_given_m, (N, E, β))
-erdos_name = "Erdős–Rényi"
-barabasi_name = "Barabási–Albert"
-rgg_name = "Rede Geométrica"
-watts_name = "Watts–Strogatz"
-
-end
-
 
 module Analysis
 using Statistics
@@ -419,4 +395,35 @@ function save_figure(title::String, fig::Makie.Figure)
     save(joinpath(out_dir, "$title.svg"), fig)
 end
 end
+
+module SharedData
+using Graphs
+using ..Topology: LazyGraph,
+    random_geometric_graph, watts_strogatz_given_m
+using CairoMakie
+using ..Analysis: range_logarithmic
+export erdos_name, barabasi_name, rgg_name, watts_name, rhos,
+    barabasi_graph, erdos_graph, rgg_graph, watts_graph, βs_watts, N_watts, E_watts, watts_cmap
+N = 5000
+M = 3
+E = N * M
+β = 0.1
+βs_watts = [2.5e-3, 5e-3, 1e-2, 5e-2]
+N_watts = 3_000
+E_watts = 9_000
+rhos = range_logarithmic(start=1e-4, stop=1.0, length=25)
+watts_cmap = cgrad(cgrad(:inferno)[range(0, 0.75, length=256)])
+
+barabasi_graph = LazyGraph(barabasi_albert, (N, M))
+erdos_graph = LazyGraph(erdos_renyi, (N, E))
+rgg_graph = LazyGraph(random_geometric_graph, (N, E))
+watts_graph = LazyGraph(watts_strogatz_given_m, (N, E, β))
+erdos_name = "Erdős–Rényi"
+barabasi_name = "Barabási–Albert"
+rgg_name = "Geométrica Aleatória"
+watts_name = "Watts–Strogatz"
+
+end
+
+
 end
