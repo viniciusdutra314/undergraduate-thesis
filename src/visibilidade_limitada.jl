@@ -104,7 +104,7 @@ function __plot_correlations(df)
     ylims!(ax_intermediação, -5, 105)
     scatter!(ax_intermediação, df.visibility, 100 * df.r_squared, color=color)
     ax_spread = Axis(fig[1, 2];
-        title="Variação das Capacidades (σ/μ)",
+        title="Coeficiente de variação das capacidades (σ/μ)",
         xlabel="Visibilidade",
         ylabel="Porcentagem (100%)",
         xticks=xticks,

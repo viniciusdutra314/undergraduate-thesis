@@ -118,17 +118,21 @@ function __plot_rho_vs_efficiency(df_efficiency, df_rho_critico_estimado)
         yscale=log10,
     )
 
+    graph_avg_distance = Dict{String,Float64}()
+    graph_stats = CSV.read("thesis/assets/tables/graph_stats.csv", DataFrame)
+    graph_avg_distance = Dict(row.graph_type => row.L for row in eachrow(graph_stats))
+
     for (g_type, sub_df) in pairs(groupby(df_efficiency, :graph_type))
         color = topology_to_color[g_type.graph_type]
         scatter!(ax_delay, sub_df.msg_generation, sub_df.avg_delay,
             color=color, label=g_type.graph_type)
         scatter!(ax_travel, sub_df.msg_generation, sub_df.avg_traveling_time,
             color=color, label=g_type.graph_type)
+        hlines!(ax_travel, graph_avg_distance[g_type.graph_type],
+            color=color, linestyle=:dash, linewidth=3, alpha=0.5)
         scatter!(ax_free_flow, sub_df.msg_generation, 100 .* sub_df.avg_free_flow,
             color=color, label=g_type.graph_type)
         vlines!(ax_delay, df_rho_critico_estimado[df_rho_critico_estimado.graph_type.==g_type.graph_type, :rho_critico_estimado],
-            color=color, linestyle=:dash, linewidth=3, alpha=0.7)
-        vlines!(ax_travel, df_rho_critico_estimado[df_rho_critico_estimado.graph_type.==g_type.graph_type, :rho_critico_estimado],
             color=color, linestyle=:dash, linewidth=3, alpha=0.7)
     end
 

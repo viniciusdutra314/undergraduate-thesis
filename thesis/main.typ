@@ -1,7 +1,6 @@
 #import "tcc_template.typ": tcc_generate_cover
 #import "@preview/wordometer:0.1.5": *
 #import "@preview/diagraph:0.3.7"
-#import "@preview/subpar:0.2.2"
 #import "@preview/zero:0.6.1": num, set-group, set-round
 
 #set-round(
@@ -356,6 +355,8 @@ Diferentes técnicas de otimizações são possíveis, cada uma priorizando uma 
 - Políticas de filas: O modelo padrão assume uma fila do tipo _First in First Out_ (FIFO), porém, outras políticas são possíveis usando prioridades arbitrarias, as quais podem ser "injustas" e atrasar pacotes individuais, mas que globalmente melhoram a eficiência da rede @wuInnovativePriorityQueueing2025.
 - Roteamentos dinâmicos: Os roteamentos mencionados nesse trabalhos são todos estáticos, ou seja, independente da dinâmica do sistemas as mensagens possuem o mesmo comportamento de trafego, é possível utilizar roteamentos que por exemplo selecionam mínimos caminhos não de forma uniforme mas que minimizam o tamanho das filas das arestas intermediárias, sendo geralmente mais eficientes do que roteamentos estatísticos ao custo de complexidade de implementação teórica e prática.
 - Adição/Remoção de arestas: Uma forma de otimizar a rede consisti em realizar pequenas mudanças topologias adicionando ou até mesmo removendo arestas.
+- Adaptação das capacidades das arestas: Através de informações topológicas globais/locais e/ou dinâmicas, a capacidade de cada aresta é modificada.
+Das possíveis otimizações descritas nesta seção, será utilizado o tipo de otimização pela adaptação da capacidade das arestas, considerando-se apenas informações locais e dinâmicas (número de mensagens observadas na aresta). Essa escolha se justifica pelo fato de não envolver alterações topológicas, tornando-a aplicável em uma maior variedade de contextos.
 
 == Adaptação da capacidade dos elos <sec:adaptação_capacidade_elos>
 
@@ -389,21 +390,14 @@ Uma das vantagens desse método é por ele ser local, cada aresta só precisa de
 
 = RESULTADOS
 
-Todos os grafos comparados foram gerados com parâmetros de forma a não diferirem em mais do que 1% no número de nós e de arestas, a conectividade foi garantida pelo procedimento descrito na @section:procedimento_conectividade, isso estabelece uma comparação justa em um cenário que se queira uma rede eficiente dado $N$ nós e $M$ conexões entre eles.
+Todos os grafos comparados (@table:informações_grafos) foram gerados com parâmetros de forma a não diferirem em mais do que 1% no número de nós e de arestas, a conectividade foi garantida pelo procedimento descrito na @section:procedimento_conectividade, isso estabelece uma comparação justa em um cenário que se queira uma rede eficiente dado $N$ nós e $M$ conexões entre eles.
 
-== Sem adaptação das capacidades <section:sem_adaptacao>
-
-A @fig:rho_vs_atraso compara a eficiência dos 4 modelos de grafos escolhidos para a análise, a aferição automática do valor de $p_c$ pra cada grafo é difícil de ser feita computacionalmente, no entanto, visualmente é possível afirmar que:
-
-
-#{
-  set text(size: 11.5pt)
-  $ p_c ("Erdős–Rényi")>p_c ("Watts–Strogatz")>p_c ("Barabási–Albert")>p_c ("Rede Geométrica") $
+#let round_num(x, digits) = {
+  [#calc.round(float(x), digits: digits)]
 }
 
-A @fig:rho_vs_atraso mostra as estimativas das taxas críticas $rho_c$ como linhas tracejadas (obtidas pela @eq:estimativa_rho), elas parecem serem mais precisas para grafos que possuem muitas arestas com intermediações altas, isso ocorre pois nesses grafos mais arestas possuem uma taxa de geração crítica próxima do valor da @eq:estimativa_rho, já no grafo de Erdős–Rényi que poucas arestas possuem $b_e>10^(-3)$, a estimativa foi bastante abaixo do observado.
 
-#let p_critico_df = csv("assets/tables/graph_stats.csv")
+#let rho_critico_df = csv("assets/tables/graph_stats.csv")
 
 
 #let topology_to_color = (
@@ -413,60 +407,65 @@ A @fig:rho_vs_atraso mostra as estimativas das taxas críticas $rho_c$ como linh
   "Watts–Strogatz": purple,
 )
 
-#let round_num(x, digits) = {
-  [#calc.round(float(x), digits: digits)]
+
+#figure(
+  box(width: 80%, table(
+    columns: (2fr, 1fr, 1fr, 1fr, 1fr, 1fr),
+    align: (left, center, center, center, center, center, center),
+    table.hline(stroke: 1pt),
+    table.header([*Grafo*], [*$N$*], [*$E$*], [*$chevron.l L chevron.r$*], [*$C$*], [*diam*]),
+    table.hline(stroke: 0.5pt),
+    ..for (graph_name, _, n, e, d, l, c) in rho_critico_df.slice(1) {
+      (
+        text(fill: topology_to_color.at(graph_name), stroke: 0.005em)[#graph_name],
+        n,
+        e,
+        round_num(l, 2),
+        round_num(c, 3),
+        d,
+      )
+    },
+    table.hline(stroke: 1pt),
+  )),
+  caption: [Informações topológicas dos grafos análisados],
+) <table:informações_grafos>
+
+
+== Sem adaptação das capacidades <section:sem_adaptacao>
+
+As Figuras#ref(<fig:rho_critico_delay>, supplement: "") e#ref(<fig:rho_critico_tempo>, supplement: "") comparam a eficiência dos modelos de grafos escolhidos para a análise, a aferição automática do valor de $rho_c$ pra cada grafo é difícil de ser feita computacionalmente, no entanto, visualmente é possível afirmar que:
+
+
+#{
+  set text(size: 11.5pt)
+  $ rho_c ("Erdős–Rényi")>rho_c ("Watts–Strogatz")>rho_c ("Barabási–Albert")>rho_c ("Rede Geométrica") $
 }
 
-#let table_p_critico_df = table(
-  columns: (2fr, 1fr, 1fr, 1fr, 1fr, 1fr),
-  align: (left, center, center, center, center, center, center),
-  table.hline(stroke: 1pt),
-  table.header([*Grafo*], [*$N$*], [*$E$*], [*$chevron.l L chevron.r$*], [*$C$*], [*diam*]),
-  table.hline(stroke: 0.5pt),
-  ..for (graph_name, _, n, e, d, l, c) in p_critico_df.slice(1) {
-    (
-      text(fill: topology_to_color.at(graph_name), stroke: 0.005em)[#graph_name],
-      n,
-      e,
-      round_num(l, 2),
-      round_num(c, 3),
-      d,
-    )
-  },
-  table.hline(stroke: 1pt),
-)
+A @fig:rho_critico_delay mostra as estimativas das taxas críticas $rho_c$ como linhas tracejadas (obtidas pela @eq:estimativa_rho), elas parecem serem mais precisas para grafos que possuem muitas arestas com intermediações altas, isso ocorre pois nesses grafos mais arestas possuem uma taxa de geração crítica próxima do valor da @eq:estimativa_rho, já no grafo de Erdős–Rényi que poucas arestas possuem $b_e>10^(-3)$, a estimativa foi bastante abaixo do observado.
 
-#subpar.grid(
-  figure(
-    image("assets/plots/p_critico_delay.svg"),
-    caption: [Atraso médio ($delta$), as linhas pontilhadas \
-      são os valores estimados de $rho_c$],
-  ),
-  <fig-atraso>,
-  figure(
-    image("assets/plots/p_critico_travel.svg"),
-    caption: [Tempo médio de viagem, as linhas pontilhadas
-      são os valores estimados de $rho_c$],
-  ),
 
-  <fig-viagem>,
+#grid(
   columns: (1fr, 1fr),
-  gutter: 10pt,
-  grid.cell(colspan: 2, align(center, box(width: 80%, table_p_critico_df))),
-  caption: [
-    Análise comparativa da dinâmica de tráfego em diferentes topologias de rede.
-    A tabela apresenta as propriedades estruturais: número de nós $N$, arestas $E$, diâmetro (diam), distância esperada $chevron.l L chevron.r$ e coeficiente de agrupamento $C$.
+  box()[
+    #figure(
+      image("assets/plots/p_critico_delay.svg"),
+      caption: [Atraso médio ($delta$), as linhas pontilhadas são os valores estimados de $rho_c$],
+    ) <fig:rho_critico_delay>
   ],
-  label: <fig:rho_vs_atraso>,
-)
+  box()[
+    #figure(
+      image("assets/plots/p_critico_travel.svg"),
+      caption: [Tempo médio de viagem, as linhas pontilhadas
+        são as distâncias médias $chevron.l L chevron.r$],
+    )<fig:rho_critico_tempo>
 
-A @fig-viagem mostra que distância média da rede é um fator  importante na sua eficiência, no regime de baixa geração de mensagens $p_c approx 0$, mesmo que o atraso seja próximo de nulo para todos os grafos, o tempo médio de viagem dos pacotes é numericamente igual a $chevron.l L chevron.r$.
+  ],
+)
+#v(5pt)
+A @fig:rho_critico_tempo mostra que distância média da rede é um fator  importante na sua eficiência, no regime de baixa geração de mensagens $rho_c approx 0$, mesmo que o atraso seja próximo de nulo para todos os grafos, o tempo médio de viagem dos pacotes é numericamente igual a $chevron.l L chevron.r$.
 
 Para melhor entender as diferenças entres os grafos, na @fig:intermediação_vs_mensagens foi comparada a quantidade de mensagens recebidas em cada aresta em função da sua intermediação para um geração de mensagens fixa.
-É interessante observar como que para os grafos simulados a intermediação varia em cerca de 3 ordens de grandeza $b_e in [10^(-6),10^(-3)]$, com a equação @eq:mensagem_estimada_e que estabelece uma relação linear entre quantidade de mensagens e intermediação, isso demostra como certas arestas recebem muito mais mensagens do que outras, e portanto, são mais "importantes"
-estruturalmente do que outras.
-
-Pela @eq:mensagem_estimada_e é esperado que o coeficiente linear da regressão intermediação por número de mensagens seja $B(N,rho)$, no caso particular simulado  em que $N=5000$ e $rho=0.01$, é esperado $alpha=50$, que é bem próximo do valor observado na da tabela da @fig:intermediação_vs_mensagens. As correlações não são exatas devido ao carácter aleatório do processo e também pelo número de mensagens ser uma quantidade discreta. A discretização é observar nos gráficos através das faixas horizontais de mensagens.
+Pela @eq:mensagem_estimada_e é esperado que o coeficiente linear da regressão intermediação por número de mensagens seja $B(N,rho)$, no caso particular simulado  em que $N=5000$ e $rho=0.01$, é esperado $alpha=50$, que é bem próximo do valor observado na @table:betweeness_vs_messages.
 
 #let betweeness_vs_messages = csv(
   "assets/tables/betweeness_vs_messages.csv",
@@ -501,17 +500,18 @@ Pela @eq:mensagem_estimada_e é esperado que o coeficiente linear da regressão 
 )
 
 #figure(
-  stack(
-    dir: ttb,
-    spacing: 1.5em,
-    image("assets/plots/p_critico_betweeness.svg", width: 60%),
-    box(width: 65%)[#table_betweeness_vs_messages],
-  ),
+  box(width: 65%)[#table_betweeness_vs_messages],
+  caption: [Regressão linear entre intermediação e mensagens recebidas ($M_e=alpha b_e$)],
+) <table:betweeness_vs_messages>
+
+
+É interessante observar como que para os grafos simulados a intermediação varia em cerca de 3 ordens de grandeza $b_e in [10^(-6),10^(-3)]$, com a equação @eq:mensagem_estimada_e que estabelece uma relação linear entre quantidade de mensagens e intermediação, isso demostra como certas arestas recebem muito mais mensagens do que outras, e portanto, são mais "importantes"
+estruturalmente do que outras. As correlações não são exatas devido ao carácter aleatório do processo e também pelo número de mensagens ser uma quantidade discreta, a discretização é observável nos gráficos através das faixas horizontais de mensagens.
+
+#figure(
+  image("assets/plots/p_critico_betweeness.svg", width: 60%),
   caption: [Análise da correlação entre centralidade de intermediação de aresta e mensagens recebidas, $rho$ fixo em 0.01],
-) <fig:intermediação_vs_mensagens>
-
-
-
+)<fig:intermediação_vs_mensagens>
 
 Outra grandeza de interesse é a quantidade total de mensagens presentes na rede, a @eq:media_mensagens prevê uma relação linear com esse valor e a distância média, uma maneira de verificar essa equação é usar um modelo de grafo que se possa fixar $N,E,rho$ e variar $chevron.l L chevron.r$.
 Um modelo que consegue variar essa grandeza é o modelo de Watts-Strogatz, que assume comportamentos diferentes dependendo do valor $beta$:
@@ -610,7 +610,7 @@ Será analisado um grafo de diâmetro grande para que seja possível variar a vi
 
 A @fig:visibilidade_limitada mostra como o método de adaptação de capacidades é robusto a mudanças no roteamento, refletindo na capacidade alocada a quantidade de mensagens esperadas.
 
-- $k approx 0$: O roteamento é um passeio aleatório, nesse cenário toda aresta  independentemente de sua posição na rede é igualmente provável de receber mensagens, por isso a não correlação das capacidades com a intermediação de aresta, as capacidades se distribuem de maneira uniforme, por isso $sigma/mu approx 0$ do histograma das capacidades.
+- $k approx 0$: O roteamento é um passeio aleatório, nesse cenário toda aresta  independentemente de sua posição na rede é igualmente provável de receber mensagens, por isso a não correlação das capacidades com a intermediação de aresta, as capacidades se distribuem de maneira uniforme, por isso o coeficiente de variação do histograma das capacidades é próximo de zero.
 
 - $0 < k < "diam"(G)$: É um roteamento de visibilidade  limitada, o comportamento é intermediário, exibindo capacidades que fracamente correlacionam com a intermediação (caminhos mínimos) e que oscilam próximas de uma média (passeio aleatório).
 
@@ -628,7 +628,7 @@ Isso ocorre pois a eficiência é determinada pela distribuição de distâncias
         caption: [Adaptação das capacidades para
           diferentes visibilidades ($rho=0.1$, $T_("amostragem")=100$, $eta=0.99$) ],
       ),
-      width: 75%,
+      width: 72%,
     )
   ],
 ) <fig:visibilidade_limitada>
