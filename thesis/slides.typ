@@ -8,7 +8,11 @@
     panic("O documento foi feito em Typst 0.14.2, talvez não funcione em outra versão")
   }
 }
-#set text(lang: "pt", region: "br")
+#set text(lang: "pt", region: "br", hyphenate: false)
+#set par(
+  justify: true,
+  leading: 0.65em,
+)
 #show: slides.with(
   title: [#tcc_template.titulo],
   subtitle: "easy slides in typst",
@@ -35,36 +39,73 @@
   [#align(center)[#rect(width: 100%, height: 100%, stroke: 0.5pt + gray, radius: 3pt)[
     Erdős-Rényi (1959)
     #image("assets_slides/erdos.svg")
-    - Grafo escolhido uniformemente no conjunto $cal(G)(n, m)$
-    - Hipótese nula
-
+    #text(size: 10pt)[
+      - Grafo escolhido uniformemente no conjunto $cal(G)(n, m)$
+      - *Hipótese nula*
+    ]
   ]]],
   [#align(center)[#rect(width: 100%, height: 100%, stroke: 0.5pt + gray, radius: 3pt)[
     Geométrico (1961)
     #image("assets_slides/rgg.svg")
-    - Nós distribuídos uniformemente em um espaço métrico
-    - Arestas entre nós próximos
+    #text(size: 10pt)[
+      - Nós  uniformemente distribuídos, arestas entre nós próximos
+      - *Exemplos:* Redes de sensores sem fio, redes de contágio por proximidade física.
+    ]
   ]]],
   [#align(center)[#rect(width: 100%, height: 100%, stroke: 0.5pt + gray, radius: 3pt)[
     Watts-Strogatz (1998)
     #image("assets_slides/watts.svg")
-    - Um grafo regular com uma fração de arestas aleatórias
-    - Mundo pequeno
-
-
+    #text(size: 10pt)[
+      - Um grafo regular com uma fração de arestas aleatórias
+      - *Exemplos:* Redes de mundo pequeno, como redes sociais e redes de colaboração científica.
+    ]
   ]]],
   [#align(center)[
     #rect(width: 100%, height: 100%, stroke: 0.5pt + gray, radius: 3pt)[
       Barabási-Albert (1999)
       #image("assets_slides/barabasi.svg")
-
+      #text(size: 10pt)[
+        - Grafo gerado por crescimento com ligação preferêncial
+        - *Exemplos:* A rede de hiperlinks da internet, redes de citação científica
+      ]
     ]
   ]],
 )
 
 == Tipos de roteamento
 
+#let colors_roteamento = (
+  "Mínimos caminhos": blue,
+  "Visibilidade limitada": green,
+  "Caminhada aleatória": orange,
+)
 
+
+
+#grid(
+  rows: 1,
+  columns: (1fr, 1fr),
+  [
+    - #text(fill: orange)[Caminhada aleatória]: Um vizinho aleatório é escolhido para encaminhar a mensagem, sem informação global sobre a topologia.
+
+    - #text(fill: green)[Visibilidade limitada]: Realiza roteamento por mínimos caminhos somente até uma distância máxima $k$.
+
+    - #text(fill: blue)[Caminhos mínimos]:
+      Tem conhecimento global da topologia e encaminha a mensagem para um caminho mínimo.
+    #table(
+      columns: (1fr, 1fr),
+      table.header([Roteamento], [Comprimento]),
+      ..for (graph_name, distance) in csv("assets_slides/roteamentos_comprimentos.csv").slice(1) {
+        ([#text(fill: colors_roteamento.at(graph_name))[#graph_name]], [#distance])
+      },
+    )
+  ],
+
+  figure(caption: "Comparação dos comprimentos dos roteamentos em um quadrado 20 x 20")[
+    #image("assets_slides/modelos_roteamento.svg")
+
+  ],
+)
 = Resultados
 
 = Conclusões
