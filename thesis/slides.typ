@@ -4,96 +4,69 @@
 #import "@preview/diatypst:0.9.1": *
 #import "@preview/diagraph:0.3.7"
 #{
-  if sys.version!=version(0,14,2){
+  if sys.version != version(0, 14, 2) {
     panic("O documento foi feito em Typst 0.14.2, talvez não funcione em outra versão")
   }
 }
-#set text(lang: "pt",region: "br")
+#set text(lang: "pt", region: "br")
 #show: slides.with(
   title: [#tcc_template.titulo],
   subtitle: "easy slides in typst",
   date: "01.07.2024",
   authors: ([#tcc_template.nome_aluno].text),
-  count:"number",
-  ratio: 16/9,
+  count: "number",
+  ratio: 16 / 9,
   layout: "medium",
   title-color: blue.darken(60%),
   toc: true,
 )
 
+= Introdução
+
+= Metodologia
 
 
-= O que é um grafo?
+== Modelos de grafos
+#grid(
+  rows: 1,
+  columns: (1fr, 1fr, 1fr, 1fr),
+  gutter: 0.5cm,
+
+  [#align(center)[#rect(width: 100%, height: 100%, stroke: 0.5pt + gray, radius: 3pt)[
+    Erdős-Rényi (1959)
+    #image("assets_slides/erdos.svg")
+    - Grafo escolhido uniformemente no conjunto $cal(G)(n, m)$
+    - Hipótese nula
+
+  ]]],
+  [#align(center)[#rect(width: 100%, height: 100%, stroke: 0.5pt + gray, radius: 3pt)[
+    Geométrico (1961)
+    #image("assets_slides/rgg.svg")
+    - Nós distribuídos uniformemente em um espaço métrico
+    - Arestas entre nós próximos
+  ]]],
+  [#align(center)[#rect(width: 100%, height: 100%, stroke: 0.5pt + gray, radius: 3pt)[
+    Watts-Strogatz (1998)
+    #image("assets_slides/watts.svg")
+    - Um grafo regular com uma fração de arestas aleatórias
+    - Mundo pequeno
 
 
-== Tipos de grafos
+  ]]],
+  [#align(center)[
+    #rect(width: 100%, height: 100%, stroke: 0.5pt + gray, radius: 3pt)[
+      Barabási-Albert (1999)
+      #image("assets_slides/barabasi.svg")
 
-
-/ *Grafo*: #tcc.definição_grafo
-
-#align(center)[
-  #diagraph.render(```
-    graph RedeSocial {
-      node [style=filled, fillcolor=lightblue];
-      rankdir="LR"
-      "Alice" -- "Bob";
-      "Alice" -- "Carlos";
-      "Bob" -- "Daniela";
-      "Carlos" -- "Daniela";
-      "Daniela" -- "Eduardo";
-      "Eduardo" -- "Alice";
-  }
-  ```.text,width:50%)
-]
-/ *Digráfo*: #tcc.definição_digrafo
-
-#figure(
-  align(center)[
-  #diagraph.render(```
-  digraph ScientificPython {
-    // Estética geral
-    node [shape=box, style="filled, rounded", fontname="Verdana", fillcolor="#f9f9f9"];
-    edge [color="#555555", arrowhead=vee];
-    rankdir=LR; // Faz o grafo crescer de baixo para cima (NumPy na base)
-
-    // Bibliotecas
-    "NumPy" [fillcolor="#4D77CF", fontcolor=white];
-    "SciPy" [fillcolor="#8CAAE6"];
-    "Pandas" [fillcolor="#E70488", fontcolor=white];
-    "Matplotlib" [fillcolor="#113137", fontcolor=white];
-    "Scikit-Learn" [fillcolor="#F7941E"];
-    "Igraph"
-    // Relações de Dependência
-    "SciPy" -> "NumPy";
-    "Pandas" -> "NumPy";
-    "Matplotlib" -> "NumPy";
-    "Scikit-Learn" -> "NumPy";
-    "Scikit-Learn" -> "SciPy";
-    "Código Python" -> "Igraph"
-    // Aplicação final
-    "Código Python" [shape=ellipse, fillcolor="#2ecc71"];
-    "Código Python" -> "Scikit-Learn";
-    "Código Python" -> "Pandas";
-}
-```.text,width:47%)
-],caption: [Dependências simplificadas de um código Python]
-  
+    ]
+  ]],
 )
 
-/ *Grafo Ponderado*: #tcc.definição_grafo_ponderado
+== Tipos de roteamento
 
-#align(center)[
-#diagraph.render(```
-  digraph Logistica {
-    rankdir=LR;
 
-    "SP" -> "RJ" [label="434 km"];
-    "SP" -> "MG" [label="903 km"];
-    "MG" -> "RJ" [label="773 km"];
-    "MG" -> "ES" [label="R 300"];
-    "RJ" -> "ES" [label="R 250"];
-    "ES" -> "SP" [label="R 450"]; 
-}
-```.text,width:60%)
-]
-#bibliography("zotero.bib")
+= Resultados
+
+= Conclusões
+
+#bibliography("../zotero.bib")
