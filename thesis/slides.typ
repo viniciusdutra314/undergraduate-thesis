@@ -2,12 +2,13 @@
 #import "tcc_template.typ" as tcc_template
 #import "@preview/polylux:0.4.0"
 #import "@preview/diatypst:0.9.1": *
-#import "@preview/diagraph:0.3.7"
+
 #{
   if sys.version != version(0, 14, 2) {
     panic("O documento foi feito em Typst 0.14.2, talvez não funcione em outra versão")
   }
 }
+
 #set text(lang: "pt", region: "br", hyphenate: false)
 #set par(
   justify: true,
@@ -15,8 +16,6 @@
 )
 #show: slides.with(
   title: [#tcc_template.titulo],
-  subtitle: "easy slides in typst",
-  date: "01.07.2024",
   authors: ([#tcc_template.nome_aluno].text),
   count: "number",
   ratio: 16 / 9,
@@ -25,7 +24,20 @@
   toc: true,
 )
 
+#set figure(numbering:none)
+
+
 = Introdução
+
+== Exemplos de aplicação
+#grid(
+  rows: (1fr, 1fr),
+  columns: (1fr, 1fr),
+  figure(
+    image("assets_slides/sao_carlos.svg"),
+    caption: "Rede de ruas de São Carlos")
+  ,
+)
 
 = Metodologia
 
@@ -71,6 +83,9 @@
     ]
   ]],
 )
+== Modelo de tráfego
+e
+
 
 == Tipos de roteamento
 
@@ -79,7 +94,6 @@
   "Visibilidade limitada": green,
   "Caminhada aleatória": orange,
 )
-
 
 
 #grid(
@@ -101,13 +115,34 @@
     )
   ],
 
-  figure(caption: "Comparação dos comprimentos dos roteamentos em um quadrado 20 x 20")[
-    #image("assets_slides/modelos_roteamento.svg")
-
-  ],
+  figure(
+    caption: "Comparação dos comprimentos dos roteamentos em um quadrado 20 x 20",
+    image("assets_slides/modelos_roteamento.svg"),
+  ),
 )
+
+== Metódo da adaptação de capacidades
+
+O número de mensagens na aresta é registrado durante um período $T$ de amostragem, criando assim um histograma de frequências. Uma fração desejada de tempo que a aresta deve estar livre de congestionamento $eta$ é escolhida, a capacidade de cada aresta é atualizada
+$C_e -> sqrt(C_e times min {C in ZZ^+ : F_e (C) >= eta})$.
+#figure(
+  image("assets/plots/histogram_example.svg", height: 76%),
+)
+
+#pagebreak()
 = Resultados
 
+== Com/Sem adaptação das capacidades
+
+#figure(
+  image("assets/plots/p_critico_travel_adapted_capacity.svg", width: 70%),
+  caption: [ ($T_("amostragem")=100$, $eta=0.99$ )],
+)
+
+== Custo da Adaptação
+#align(center)[
+  #image("assets/plots/p_critico_capacity_adapted_capacity.svg")
+]
 = Conclusões
 
 #bibliography("../zotero.bib")
