@@ -2,6 +2,7 @@
 #import "tcc_template.typ" as tcc_template
 #import "@preview/polylux:0.4.0"
 #import "@preview/diatypst:0.9.1": *
+#import "@preview/fletcher:0.5.8" as fletcher: diagram, edge, node
 
 #{
   if sys.version != version(0, 14, 2) {
@@ -24,7 +25,7 @@
   toc: true,
 )
 
-#set figure(numbering:none)
+#set figure(numbering: none)
 
 
 = Introdução
@@ -35,8 +36,8 @@
   columns: (1fr, 1fr),
   figure(
     image("assets_slides/sao_carlos.svg"),
-    caption: "Rede de ruas de São Carlos")
-  ,
+    caption: "Rede de ruas de São Carlos",
+  ),
 )
 
 = Metodologia
@@ -129,7 +130,79 @@ $C_e -> sqrt(C_e times min {C in ZZ^+ : F_e (C) >= eta})$.
   image("assets/plots/histogram_example.svg", height: 76%),
 )
 
-#pagebreak()
+== Implementação Computacional
+
+#grid(
+  columns: 2,
+  gutter: 30pt,
+  diagram(
+    spacing: (2cm, 1.5cm),
+    node(
+      (0, 0),
+
+      grid(
+        columns: (0.5fr, 1fr),
+        image("assets_slides/julia-dots.svg", height: 175%),
+        [
+          *Análise: Julia + Makie*
+
+        ],
+      ),
+
+      fill: rgb("#b9c2ca"),
+      stroke: none,
+      inset: 15pt,
+      radius: 3pt,
+      width: 8cm,
+      height: 1.75cm,
+    ),
+
+    edge((0., 1), (0, 0), "-|>", shift: 0.5cm, stroke: 1pt + rgb("4a4a4a")),
+
+    node(
+      (0, 1),
+
+      grid(
+        columns: (0.5fr, 1fr),
+        image("assets_slides/hdf_logo.png", height: 100%), [*Persistência: HDF5*],
+      ),
+      fill: rgb("#b9c2ca"),
+      stroke: none,
+      inset: 15pt,
+      radius: 2pt,
+      width: 8cm,
+      height: 1.75cm,
+    ),
+
+    edge((0, 2), (0, 1), "-|>", shift: 0.5cm, stroke: 1pt + rgb("4a4a4a")),
+    node(
+      (0, 2),
+      grid(
+        columns: (0.5fr, 1fr),
+        image("assets_slides/ferris-flat-noshadow.svg", height: 150%),
+        [
+          *Simulador: Safe Rust*\
+          (Opensource licença MIT)
+        ],
+      ),
+      fill: rgb("b9c2ca"),
+      stroke: none,
+      inset: 15pt,
+      radius: 2pt,
+      width: 8cm,
+      height: 1.75cm,
+    ),
+  ),
+  align(horizon + center)[
+    #figure(
+      image("assets/tables/llvm_cov_table.png", width: 120%
+      ),
+      caption:[Simulador com 95% de cobertura de testes]
+    )
+    
+  ],
+)
+
 = Resultados
 
 == Com/Sem adaptação das capacidades
