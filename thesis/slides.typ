@@ -85,7 +85,61 @@
   ]],
 )
 == Modelo de tráfego
-e
+
+A cada instante de tempo, cada nó *$s$* tem uma probabilidade *$rho$* de gerar uma mensagem a um destino *$t$* escolhido aleatoriamente. Cada aresta *$e$* tem uma capacidade *$C_e$* de roteamento, se o número de mensagens  exceder essa capacidade, as mensagens são colocadas em uma fila FIFO (First In, First Out), resultando em atrasos.
+
+#let message(source, destination, color: rgb("#dbeafe")) = {
+  rect(
+    inset: 8pt,
+    radius: 4pt,
+    fill: color,
+    stroke: rgb("#1e40af"),
+    [
+      *Mensagem*
+      #linebreak()
+      origem: #source
+      #linebreak()
+      destino: #destination
+    ]
+  )
+}
+
+#align(center)[
+  #diagram(
+    spacing: 2.5cm, 
+    node((0,0), circle([$a$], radius: 20pt), name: <node-a>),
+    
+    edge(<node-a>, <node-fila>, "-|>", stroke: 1pt),
+    
+    node((1,0), box(
+      stroke: blue,
+      inset: 6pt,
+      radius: 4pt,
+      [
+        #align(center)[*Fila FIFO*]
+        #v(0.5em)
+        #stack(
+          dir: ltr,
+          spacing: 0.4em,
+          message(1, 15),
+          message(53, 195),
+          message(63, 356),
+        )
+        #v(0.5em)
+        #align(center)[
+          Primeiro a entrar $arrow.r$ Primeiro a sair
+        ]
+      ]
+    ), name: <node-fila>),
+    
+    edge(<node-fila>, <node-b>, "-|>", stroke: 1pt,label:[Até $C_e$ por vez]),
+    node((2,0), circle([$b$], radius: 20pt), name: <node-b>),
+  )
+]
+
+
+#v(1em)
+
 
 
 == Tipos de roteamento
@@ -214,7 +268,11 @@ $C_e -> sqrt(C_e times min {C in ZZ^+ : F_e (C) >= eta})$.
 
 == Custo da Adaptação
 #align(center)[
-  #image("assets/plots/p_critico_capacity_adapted_capacity.svg")
+  
+  #figure(
+    image("assets/plots/p_critico_capacity_adapted_capacity.svg",height:95%),
+     caption: [ ($T_("amostragem")=100$, $eta=0.99$ )],
+  )  
 ]
 = Conclusões
 
