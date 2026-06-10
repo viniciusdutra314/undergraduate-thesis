@@ -236,7 +236,7 @@ $C_e -> sqrt(C_e times min {C in ZZ^+ : F_e (C) >= eta})$.
         image("assets_slides/ferris-flat-noshadow.svg", height: 150%),
         [
           *Simulador: Safe Rust*\
-          (Opensource licença MIT)
+          (Código aberto  licença MIT)
         ],
       ),
       fill: rgb("b9c2ca"),
@@ -274,6 +274,32 @@ $C_e -> sqrt(C_e times min {C in ZZ^+ : F_e (C) >= eta})$.
      caption: [ ($T_("amostragem")=100$, $eta=0.99$ )],
   )  
 ]
+== A adaptação com diferentes roteamentos
+
+#grid(
+  columns:(1fr,1fr),
+  figure(
+    align(center)[
+      #box(
+        figure(
+          image("assets/plots/visibilidade_limitada_grid.svg"),
+          caption: [Distribuição de distâncias de um grafo Watts-Strogatz\ ($N=3000$, $k=6$, $beta=0.01$)],
+        ),
+        width: 75%,
+      )
+    ]
+  ),
+  figure(
+    image("assets/plots/visibilidade_limitada_correlations.svg",height:85%),
+    caption: [Adaptação para diferentes  visibilidades \ ($rho=0.1$, $T_("amostragem")=100$, $eta=0.99$) ],
+  )
+) 
+
+
+
+
+
+
 = Conclusões
 
 #bibliography("../zotero.bib")
