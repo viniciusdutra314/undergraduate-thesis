@@ -15,6 +15,50 @@
   justify: true,
   leading: 0.65em,
 )
+
+
+
+#import "@preview/grayness:0.6.0": image-blur
+#page(
+  footer: none,
+  header: none,
+  margin: 0cm,
+  height: 10.5cm,
+  background: image-blur(read("assets_slides/complex_network_background.png", encoding: none), sigma: 5),
+  width: 16 / 9 * 10.5cm,
+
+  place(center + horizon)[
+    #block(
+      width: 75%,
+      height: 85%,
+      fill: rgb("#1a1d24").transparentize(10%),
+      radius: 10pt,
+      inset: (x: 2cm, y: 1.5cm),
+      stroke: none,
+    )[
+      #set text(fill: rgb("#e2e8f0"))
+      #v(20pt)
+      #text(size: 13pt, tracking: 0.5pt)[
+        Curso de #strong([Física Computacional])
+      ]
+
+      #text(size: 20pt, weight: "bold", fill: rgb("#ffb302"))[
+        #tcc_template.titulo
+      ]
+
+      #text(size: 18pt, weight: "medium", fill: white)[
+        #tcc_template.nome_aluno
+      ]
+
+
+      #text(size: 13pt, fill: white)[
+        Orientador: #tcc_template.orientador
+      ]
+    ]
+  ],
+)
+
+
 #show: slides.with(
   title: [#tcc_template.titulo],
   authors: ([#tcc_template.nome_aluno].text),
@@ -22,21 +66,32 @@
   ratio: 16 / 9,
   layout: "medium",
   title-color: blue.darken(60%),
-  toc: true,
+  toc: false,
+  footer-title: [Trabalho de conclusão de curso (IFSC/USP)],
+  footer-subtitle: [#tcc_template.nome_aluno, Orientador: Gonzalo Travieso],
+  theme: "full",
+  first-slide: false,
 )
 
+
+#set page(background: none)
 #set figure(numbering: none)
 
 
 = Introdução
 
-== Exemplos de aplicação
+== Objetivos e motivação
 #grid(
-  rows: (1fr, 1fr),
   columns: (1fr, 1fr),
+  [
+    #align(center+horizon)[
+      - #text(size:17pt)[Analisar a eficiência  de diferentes *redes* e *roteamentos* na troca de pacotes 
+      ]
+    ]
+  ],
   figure(
-    image("assets_slides/sao_carlos.svg"),
-    caption: "Rede de ruas de São Carlos",
+    image("assets_slides/sao_carlos.svg",height:90%),
+    caption: [Exemplo de aplicação: \ Rede de ruas de São Carlos],
   ),
 )
 
@@ -100,40 +155,44 @@ A cada instante de tempo, cada nó *$s$* tem uma probabilidade *$rho$* de gerar 
       origem: #source
       #linebreak()
       destino: #destination
-    ]
+    ],
   )
 }
 
 #align(center)[
   #diagram(
-    spacing: 2.5cm, 
-    node((0,0), circle([$a$], radius: 20pt), name: <node-a>),
-    
+    spacing: 2.5cm,
+    node((0, 0), circle([$a$], radius: 20pt), name: <node-a>),
+
     edge(<node-a>, <node-fila>, "-|>", stroke: 1pt),
-    
-    node((1,0), box(
-      stroke: blue,
-      inset: 6pt,
-      radius: 4pt,
-      [
-        #align(center)[*Fila FIFO*]
-        #v(0.5em)
-        #stack(
-          dir: ltr,
-          spacing: 0.4em,
-          message(1, 15),
-          message(53, 195),
-          message(63, 356),
-        )
-        #v(0.5em)
-        #align(center)[
-          Primeiro a entrar $arrow.r$ Primeiro a sair
-        ]
-      ]
-    ), name: <node-fila>),
-    
-    edge(<node-fila>, <node-b>, "-|>", stroke: 1pt,label:[Até $C_e$ por vez]),
-    node((2,0), circle([$b$], radius: 20pt), name: <node-b>),
+
+    node(
+      (1, 0),
+      box(
+        stroke: blue,
+        inset: 6pt,
+        radius: 4pt,
+        [
+          #align(center)[*Fila FIFO*]
+          #v(0.5em)
+          #stack(
+            dir: ltr,
+            spacing: 0.4em,
+            message(15,4),
+            message(53, 195),
+            message(63, 356),
+          )
+          #v(0.5em)
+          #align(center)[
+            Primeiro a entrar $arrow.r$ Primeiro a sair
+          ]
+        ],
+      ),
+      name: <node-fila>,
+    ),
+
+    edge(<node-fila>, <node-b>, "-|>", stroke: 1pt, label: [Até $C_e$ por vez]),
+    node((2, 0), circle([$b$], radius: 20pt), name: <node-b>),
   )
 ]
 
@@ -155,6 +214,7 @@ A cada instante de tempo, cada nó *$s$* tem uma probabilidade *$rho$* de gerar 
   rows: 1,
   columns: (1fr, 1fr),
   [
+    
     - #text(fill: orange)[Caminhada aleatória]: Um vizinho aleatório é escolhido para encaminhar a mensagem, sem informação global sobre a topologia.
 
     - #text(fill: green)[Visibilidade limitada]: Realiza roteamento por mínimos caminhos somente até uma distância máxima $k$.
@@ -249,16 +309,16 @@ $C_e -> sqrt(C_e times min {C in ZZ^+ : F_e (C) >= eta})$.
   ),
   align(horizon + center)[
     #figure(
-      image("assets/tables/llvm_cov_table.png", width: 120%
-      ),
-      caption:[Simulador com 95% de cobertura de testes]
+      image("assets/tables/llvm_cov_table.png", width: 120%),
+      caption: [Simulador com 95% de cobertura de testes],
     )
-    
+
   ],
 )
 
 = Resultados
 
+#heading([Roteamento por mínimos caminhos], numbering: none)
 == Com/Sem adaptação das capacidades
 
 #figure(
@@ -268,16 +328,18 @@ $C_e -> sqrt(C_e times min {C in ZZ^+ : F_e (C) >= eta})$.
 
 == Custo da Adaptação
 #align(center)[
-  
+
   #figure(
-    image("assets/plots/p_critico_capacity_adapted_capacity.svg",height:95%),
-     caption: [ ($T_("amostragem")=100$, $eta=0.99$ )],
-  )  
+    image("assets/plots/p_critico_capacity_adapted_capacity.svg", height: 95%),
+    caption: [ ($T_("amostragem")=100$, $eta=0.99$ )],
+  )
 ]
+#heading([Diferentes roteamentos], numbering: none)
+
 == A adaptação com diferentes roteamentos
 
 #grid(
-  columns:(1fr,1fr),
+  columns: (1fr, 1fr),
   figure(
     align(center)[
       #box(
@@ -287,13 +349,13 @@ $C_e -> sqrt(C_e times min {C in ZZ^+ : F_e (C) >= eta})$.
         ),
         width: 75%,
       )
-    ]
+    ],
   ),
   figure(
-    image("assets/plots/visibilidade_limitada_correlations.svg",height:85%),
+    image("assets/plots/visibilidade_limitada_correlations.svg", height: 85%),
     caption: [Adaptação para diferentes  visibilidades \ ($rho=0.1$, $T_("amostragem")=100$, $eta=0.99$) ],
-  )
-) 
+  ),
+)
 
 
 
@@ -301,5 +363,18 @@ $C_e -> sqrt(C_e times min {C in ZZ^+ : F_e (C) >= eta})$.
 
 
 = Conclusões
+== Conclusões
+- A distância média e a distribuição de intermediação de arestas são os principais fatores para uma rede eficiente
+
+
+- É possível otimizar a capacidade das arestas somente utilizando informações locais que não fazem suposições sobre a topologia ou tipo de roteamento.
+
+
+*Estudos futuros*
+- Geração não uniforme de mensagens no tempo e também por nós específicos.
+- Adição de pesos às arestas, para modelar diferentes tipos de conexões.
+- Estudo teórico do impacto de $T$ e $eta$ na otimização final
+
+#heading([Obrigado, dúvidas?],numbering: none)
 
 #bibliography("../zotero.bib")
