@@ -1,8 +1,9 @@
 #import "main.typ" as tcc
 #import "tcc_template.typ" as tcc_template
-#import "@preview/polylux:0.4.0"
+#import "@preview/polylux:0.4.0": *
 #import "@preview/diatypst:0.9.1": *
 #import "@preview/fletcher:0.5.8" as fletcher: diagram, edge, node
+#import "@preview/grayness:0.6.0": image-blur, image-crop
 
 #{
   if sys.version != version(0, 14, 2) {
@@ -18,13 +19,15 @@
 
 
 
-#import "@preview/grayness:0.6.0": image-blur
 #page(
   footer: none,
   header: none,
   margin: 0cm,
   height: 10.5cm,
-  background: image-blur(read("assets_slides/complex_network_background.png", encoding: none), sigma: 5),
+  background: box(
+    image-blur(read("assets_slides/complex_network_background.png", encoding: none), sigma: 5),
+    height: 200%,
+  ),
   width: 16 / 9 * 10.5cm,
 
   place(center + horizon)[
@@ -76,6 +79,7 @@
 
 #set page(background: none)
 #set figure(numbering: none)
+#set heading(numbering: none)
 
 
 = Introdução
@@ -84,13 +88,13 @@
 #grid(
   columns: (1fr, 1fr),
   [
-    #align(center+horizon)[
-      - #text(size:17pt)[Analisar a eficiência  de diferentes *redes* e *roteamentos* na troca de pacotes 
-      ]
+    #align(center + horizon)[
+      - #text(size: 17pt)[Analisar a eficiência  de diferentes *redes* e *roteamentos* na troca de pacotes
+        ]
     ]
   ],
   figure(
-    image("assets_slides/sao_carlos.svg",height:90%),
+    image("assets_slides/sao_carlos.svg", height: 90%),
     caption: [Exemplo de aplicação: \ Rede de ruas de São Carlos],
   ),
 )
@@ -99,46 +103,52 @@
 
 
 == Modelos de grafos
-#grid(
-  rows: 1,
-  columns: (1fr, 1fr, 1fr, 1fr),
-  gutter: 0.5cm,
 
-  [#align(center)[#rect(width: 100%, height: 100%, stroke: 0.5pt + gray, radius: 3pt)[
-    Erdős-Rényi (1959)
-    #image("assets_slides/erdos.svg")
-    #text(size: 10pt)[
-      - Grafo escolhido uniformemente no conjunto $cal(G)(n, m)$
-      - *Hipótese nula*
-    ]
-  ]]],
-  [#align(center)[#rect(width: 100%, height: 100%, stroke: 0.5pt + gray, radius: 3pt)[
-    Geométrico (1961)
-    #image("assets_slides/rgg.svg")
-    #text(size: 10pt)[
-      - Nós  uniformemente distribuídos, arestas entre nós próximos
-      - *Exemplos:* Redes de sensores sem fio, redes de contágio por proximidade física.
-    ]
-  ]]],
-  [#align(center)[#rect(width: 100%, height: 100%, stroke: 0.5pt + gray, radius: 3pt)[
-    Watts-Strogatz (1998)
-    #image("assets_slides/watts.svg")
-    #text(size: 10pt)[
-      - Um grafo regular com uma fração de arestas aleatórias
-      - *Exemplos:* Redes de mundo pequeno, como redes sociais e redes de colaboração científica.
-    ]
-  ]]],
-  [#align(center)[
-    #rect(width: 100%, height: 100%, stroke: 0.5pt + gray, radius: 3pt)[
-      Barabási-Albert (1999)
-      #image("assets_slides/barabasi.svg")
+#slide[
+  #grid(
+    rows: 1,
+    columns: (1fr, 1fr, 1fr, 1fr),
+    gutter: 0.5cm,
+
+    [#align(center)[#rect(width: 100%, height: 100%, stroke: 0.5pt + gray, radius: 3pt)[
+      Erdős-Rényi (1959)
+      #image("assets_slides/erdos.svg")
       #text(size: 10pt)[
-        - Grafo gerado por crescimento com ligação preferêncial
-        - *Exemplos:* A rede de hiperlinks da internet, redes de citação científica
+        - Grafo escolhido uniformemente no conjunto $cal(G)(n, m)$
+        - *Hipótese nula*
       ]
-    ]
-  ]],
-)
+    ]]],
+    [ #only("2-")[
+      #align(center)[
+        #rect(width: 100%, height: 100%, stroke: 0.5pt + gray, radius: 3pt)[
+          Geométrico (1961)
+          #image("assets_slides/rgg.svg")
+          #text(size: 10pt)[
+            - Nós  uniformemente distribuídos, arestas entre nós próximos
+            - *Exemplos:* Redes de sensores sem fio, redes de contágio por proximidade física.
+          ]
+        ]]]],
+    [#only("3-")[#align(center)[#rect(width: 100%, height: 100%, stroke: 0.5pt + gray, radius: 3pt)[
+      Watts-Strogatz (1998)
+      #image("assets_slides/watts.svg")
+      #text(size: 10pt)[
+        - Um grafo regular com uma fração de arestas aleatórias
+        - *Exemplos:* Redes de mundo pequeno, como redes sociais e redes de colaboração científica.
+      ]
+    ]]]],
+    [#only("4-")[
+      #align(center)[
+        #rect(width: 100%, height: 100%, stroke: 0.5pt + gray, radius: 3pt)[
+          Barabási-Albert (1999)
+          #image("assets_slides/barabasi.svg")
+          #text(size: 10pt)[
+            - Grafo gerado por crescimento com ligação preferêncial
+            - *Exemplos:* A rede de hiperlinks da internet, redes de citação científica
+          ]
+        ]
+      ]]],
+  )
+]
 == Modelo de tráfego
 
 A cada instante de tempo, cada nó *$s$* tem uma probabilidade *$rho$* de gerar uma mensagem a um destino *$t$* escolhido aleatoriamente. Cada aresta *$e$* tem uma capacidade *$C_e$* de roteamento, se o número de mensagens  exceder essa capacidade, as mensagens são colocadas em uma fila FIFO (First In, First Out), resultando em atrasos.
@@ -178,7 +188,7 @@ A cada instante de tempo, cada nó *$s$* tem uma probabilidade *$rho$* de gerar 
           #stack(
             dir: ltr,
             spacing: 0.4em,
-            message(15,4),
+            message(15, 4),
             message(53, 195),
             message(63, 356),
           )
@@ -210,32 +220,48 @@ A cada instante de tempo, cada nó *$s$* tem uma probabilidade *$rho$* de gerar 
 )
 
 
-#grid(
-  rows: 1,
-  columns: (1fr, 1fr),
-  [
-    
-    - #text(fill: orange)[Caminhada aleatória]: Um vizinho aleatório é escolhido para encaminhar a mensagem, sem informação global sobre a topologia.
+#slide[
+  #grid(
+    rows: 1,
+    columns: (1fr, 1fr),
+    [
 
-    - #text(fill: green)[Visibilidade limitada]: Realiza roteamento por mínimos caminhos somente até uma distância máxima $k$.
+      - #text(fill: orange)[Caminhada aleatória]: Um vizinho aleatório é escolhido para encaminhar a mensagem, sem informação global sobre a topologia.
 
-    - #text(fill: blue)[Caminhos mínimos]:
-      Tem conhecimento global da topologia e encaminha a mensagem para um caminho mínimo.
-    #table(
-      columns: (1fr, 1fr),
-      table.header([Roteamento], [Comprimento]),
-      ..for (graph_name, distance) in csv("assets_slides/roteamentos_comprimentos.csv").slice(1) {
-        ([#text(fill: colors_roteamento.at(graph_name))[#graph_name]], [#distance])
-      },
-    )
-  ],
+      - #text(fill: green)[Visibilidade limitada]: Realiza roteamento por mínimos caminhos somente até uma distância máxima $k$.
 
-  figure(
-    caption: "Comparação dos comprimentos dos roteamentos em um quadrado 20 x 20",
-    image("assets_slides/modelos_roteamento.svg"),
-  ),
-)
-
+      - #text(fill: blue)[Caminhos mínimos]:
+        Tem conhecimento global da topologia e encaminha a mensagem para um caminho mínimo.
+      #table(
+        columns: (1fr, 1fr),
+        table.header([Roteamento], [Comprimento]),
+        ..for (graph_name, distance) in csv("assets_slides/roteamentos_comprimentos.csv").slice(1) {
+          ([#text(fill: colors_roteamento.at(graph_name))[#graph_name]], [#distance])
+        },
+      )
+    ],
+    [
+      #only(1)[
+        #figure(
+          caption: "Comparação dos comprimentos dos roteamentos em um quadrado 20 x 20",
+          image("assets_slides/random_walk.svg"),
+        )
+      ]
+      #only(2)[
+        #figure(
+          caption: "Comparação dos comprimentos dos roteamentos em um quadrado 20 x 20",
+          image("assets_slides/limited_visibility.svg"),
+        )
+      ]
+      #only(3)[
+        #figure(
+          caption: "Comparação dos comprimentos dos roteamentos em um quadrado 20 x 20",
+          image("assets_slides/minimal_path.svg"),
+        )
+      ]
+    ],
+  )
+]
 == Metódo da adaptação de capacidades
 
 O número de mensagens na aresta é registrado durante um período $T$ de amostragem, criando assim um histograma de frequências. Uma fração desejada de tempo que a aresta deve estar livre de congestionamento $eta$ é escolhida, a capacidade de cada aresta é atualizada
@@ -321,6 +347,7 @@ $C_e -> sqrt(C_e times min {C in ZZ^+ : F_e (C) >= eta})$.
 #heading([Roteamento por mínimos caminhos], numbering: none)
 == Com/Sem adaptação das capacidades
 
+
 #figure(
   image("assets/plots/p_critico_travel_adapted_capacity.svg", width: 70%),
   caption: [ ($T_("amostragem")=100$, $eta=0.99$ )],
@@ -338,25 +365,28 @@ $C_e -> sqrt(C_e times min {C in ZZ^+ : F_e (C) >= eta})$.
 
 == A adaptação com diferentes roteamentos
 
-#grid(
-  columns: (1fr, 1fr),
-  figure(
-    align(center)[
-      #box(
-        figure(
-          image("assets/plots/visibilidade_limitada_grid.svg"),
-          caption: [Distribuição de distâncias de um grafo Watts-Strogatz\ ($N=3000$, $k=6$, $beta=0.01$)],
-        ),
-        width: 75%,
-      )
-    ],
-  ),
-  figure(
-    image("assets/plots/visibilidade_limitada_correlations.svg", height: 85%),
-    caption: [Adaptação para diferentes  visibilidades \ ($rho=0.1$, $T_("amostragem")=100$, $eta=0.99$) ],
-  ),
-)
-
+#slide[
+  #grid(
+    columns: (1fr, 1fr),
+      align(center)[
+        #only("1-")[
+          #box(
+              figure(
+                image("assets/plots/visibilidade_limitada_grid.svg"),
+                caption: [Distribuição de distâncias de um grafo Watts-Strogatz ($N=3000$, $k=6$, $beta=0.01$)],
+              ),
+              width: 75%,
+            )
+        ]
+      ],
+      only("2")[
+      #figure(
+        image("assets/plots/visibilidade_limitada_correlations.svg", height: 85%),
+        caption: [Adaptação para diferentes  visibilidades \ ($rho=0.1$, $T_("amostragem")=100$, $eta=0.99$) ],
+        )
+      ]
+  )
+]
 
 
 
@@ -364,6 +394,7 @@ $C_e -> sqrt(C_e times min {C in ZZ^+ : F_e (C) >= eta})$.
 
 = Conclusões
 == Conclusões
+
 - A distância média e a distribuição de intermediação de arestas são os principais fatores para uma rede eficiente
 
 
@@ -375,6 +406,6 @@ $C_e -> sqrt(C_e times min {C in ZZ^+ : F_e (C) >= eta})$.
 - Adição de pesos às arestas, para modelar diferentes tipos de conexões.
 - Estudo teórico do impacto de $T$ e $eta$ na otimização final
 
-#heading([Obrigado, dúvidas?],numbering: none)
+#heading([Obrigado, dúvidas?], numbering: none)
 
 #bibliography("../zotero.bib")
