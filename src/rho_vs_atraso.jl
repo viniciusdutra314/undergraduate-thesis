@@ -22,6 +22,7 @@ using LaTeXStrings
 
 const iterations = 1_000
 const rho_for_betweeness = 1e-2
+const repetitions = 10
 const hdf5_filename::String = "varying_message_generation"
 
 function generate_data()
@@ -42,14 +43,16 @@ function generate_data()
             D=Graphs.diameter(g)
         ))
         for rho in rhos
-            push!(simulations, SimulationConfigurationItem(uuid=UUIDs.uuid4(),
-                routing_method="minimal_paths",
-                graph_file_name=graph_filename,
-                message_generation=rho,
-                max_iterations=iterations,
-                graph_generation_info=Dict("graph_type" => graph_type),
-                observers=[ObserverEdgeQueue(), ObserverEdgeCapacity(iterations - 1)]
-            ))
+            for repetition in 1:repetitions
+                push!(simulations, SimulationConfigurationItem(uuid=UUIDs.uuid4(),
+                    routing_method="minimal_paths",
+                    graph_file_name=graph_filename,
+                    message_generation=rho,
+                    max_iterations=iterations,
+                    graph_generation_info=Dict("graph_type" => graph_type),
+                    observers=[ObserverEdgeQueue(), ObserverEdgeCapacity(iterations - 1)]
+                ))
+            end
         end
     end
     save_dataframe_to_csv(graph_stats, "graph_stats")
@@ -86,7 +89,13 @@ function __preprocess_data()
             )
         end
         df = DataFrame(data)
-        sort!(df, :graph_type)
+        df = combine(groupby(df, [:graph_type, :msg_generation]),
+            :avg_delay => mean => :avg_delay_mean,
+            :avg_delay => std => :avg_delay_std,
+            :avg_traveling_time => mean => :avg_traveling_time_mean,
+            :avg_traveling_time => std => :avg_traveling_time_std,
+        )
+        sort!(df, [:graph_type, :msg_generation])
         return df
     end
 end
@@ -124,10 +133,14 @@ function __plot_rho_vs_efficiency(df_efficiency, df_rho_critico_estimado)
 
     for (g_type, sub_df) in pairs(groupby(df_efficiency, :graph_type))
         color = topology_to_color[g_type.graph_type]
-        scatter!(ax_delay, sub_df.msg_generation, sub_df.avg_delay,
+        scatter!(ax_delay, sub_df.msg_generation, sub_df.avg_delay_mean,
             color=color, label=g_type.graph_type)
-        scatter!(ax_travel, sub_df.msg_generation, sub_df.avg_traveling_time,
+        errorbars!(ax_delay, sub_df.msg_generation, sub_df.avg_delay_mean, sub_df.avg_delay_std,
+            color=color, alpha=0.35)
+        scatter!(ax_travel, sub_df.msg_generation, sub_df.avg_traveling_time_mean,
             color=color, label=g_type.graph_type)
+        errorbars!(ax_travel, sub_df.msg_generation, sub_df.avg_traveling_time_mean, sub_df.avg_traveling_time_std,
+            color=color, alpha=0.35)
         hlines!(ax_travel, graph_avg_distance[g_type.graph_type],
             color=color, linestyle=:dash, linewidth=3, alpha=0.5)
         scatter!(ax_free_flow, sub_df.msg_generation, 100 .* sub_df.avg_free_flow,

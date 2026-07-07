@@ -17,6 +17,7 @@ using NPZ
 const sampling_time = 100
 const num_samplings = 50
 const iterations = num_samplings * sampling_time
+const repetitions = 10
 const free_flow_rate::Float64 = 0.99
 const minimal_capacity::Int = 1
 const multiplier::Float64 = 1
@@ -36,16 +37,18 @@ function generate_data()
         push!(distance_histogram, count(==(d), distances))
     end
     for k in 1:diameter
-        push!(simulations, SimulationConfigurationItem(uuid=UUIDs.uuid4(),
-            routing_method=RoutingMethod(k),
-            graph_file_name=graph_filename,
-            message_generation=rho,
-            max_iterations=iterations,
-            warm_up_iterations=Int(0.8 * iterations),
-            observers=GraphTraffic.Schema.ObserversUnion[ObserverEdgeCapacity(sampling_time)],
-            modifiers=[ModifierEdgeCapacity(free_flow_rate, sampling_time,
-                minimal_capacity, multiplier)],
-        ))
+        for repetition in 1:repetitions
+            push!(simulations, SimulationConfigurationItem(uuid=UUIDs.uuid4(),
+                routing_method=RoutingMethod(k),
+                graph_file_name=graph_filename,
+                message_generation=rho,
+                max_iterations=iterations,
+                warm_up_iterations=Int(0.8 * iterations),
+                observers=GraphTraffic.Schema.ObserversUnion[ObserverEdgeCapacity(sampling_time)],
+                modifiers=[ModifierEdgeCapacity(free_flow_rate, sampling_time,
+                    minimal_capacity, multiplier)],
+            ))
+        end
     end
     npzwrite("raw_results/$(hdf5_filename)_distance_histograms.npy", distance_histogram)
     run_rust_cli(simulations, hdf5_filename, force_overwrite=true)
@@ -77,14 +80,25 @@ function __preprocess_correlations()
             return (
                 visibility=visibility,
                 r_squared=r_squared,
+                cv_capacity=σ / μ,
                 mean_capacity=μ,
                 sigma_capacity=σ,
                 avg_distance=get_avg_traveling_time(sim)
             )
         end
-        return DataFrame(data)
+        df = DataFrame(data)
+        df = combine(groupby(df, :visibility),
+            :r_squared => mean => :r_squared_mean,
+            :r_squared => std => :r_squared_std,
+            :cv_capacity => mean => :cv_capacity_mean,
+            :cv_capacity => std => :cv_capacity_std,
+            :mean_capacity => mean => :mean_capacity_mean,
+            :mean_capacity => std => :mean_capacity_std,
+            :avg_distance => mean => :avg_distance_mean,
+            :avg_distance => std => :avg_distance_std,
+        )
+        return filter(row -> !isnan(row.r_squared_mean), df)
     end
-    return filter(row -> !isnan(row.r_squared), df)
 end
 
 function __plot_correlations(df)
@@ -102,14 +116,16 @@ function __plot_correlations(df)
         yticks=0:25:100,
     )
     ylims!(ax_intermediação, -5, 105)
-    scatter!(ax_intermediação, df.visibility, 100 * df.r_squared, color=color)
+    scatter!(ax_intermediação, df.visibility, 100 * df.r_squared_mean, color=color)
+    errorbars!(ax_intermediação, df.visibility, 100 * df.r_squared_mean, 100 * df.r_squared_std, color=color, alpha=0.35)
     ax_spread = Axis(fig[1, 2];
         title="Coeficiente de variação das capacidades (σ/μ)",
         xlabel="Visibilidade",
         ylabel="Porcentagem (100%)",
         xticks=xticks,
     )
-    scatter!(ax_spread, df.visibility, 100 * df.sigma_capacity ./ df.mean_capacity, color=color)
+    scatter!(ax_spread, df.visibility, 100 * df.cv_capacity_mean, color=color)
+    errorbars!(ax_spread, df.visibility, 100 * df.cv_capacity_mean, 100 * df.cv_capacity_std, color=color, alpha=0.35)
 
     ax_capacity = Axis(fig[2, 1];
         title="Capacidade Média",
@@ -117,7 +133,8 @@ function __plot_correlations(df)
         ylabel="Capacidade Média",
         xticks=xticks,
     )
-    scatter!(ax_capacity, df.visibility, df.mean_capacity, color=color)
+    scatter!(ax_capacity, df.visibility, df.mean_capacity_mean, color=color)
+    errorbars!(ax_capacity, df.visibility, df.mean_capacity_mean, df.mean_capacity_std, color=color, alpha=0.35)
 
     ax_distance = Axis(fig[2, 2];
         title="Tempo Médio de Viagem",
@@ -125,7 +142,8 @@ function __plot_correlations(df)
         ylabel="Tempo Médio (Passos)",
         xticks=xticks,
     )
-    scatter!(ax_distance, df.visibility, df.avg_distance, color=color)
+    scatter!(ax_distance, df.visibility, df.avg_distance_mean, color=color)
+    errorbars!(ax_distance, df.visibility, df.avg_distance_mean, df.avg_distance_std, color=color, alpha=0.35)
     colgap!(fig.layout, 18)
     rowgap!(fig.layout, 22)
 

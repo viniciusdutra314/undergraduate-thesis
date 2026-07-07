@@ -23,6 +23,7 @@ using LaTeXStrings
 const sampling_time = 100
 const num_samplings = 25
 const iterations = num_samplings * sampling_time
+const repetitions = 10
 const free_flow_rate::Float64 = 0.99
 const minimal_capacity::Int = 1
 const multiplier::Float64 = 1
@@ -36,26 +37,28 @@ function generate_data()
     for (graph_type, g) in [(barabasi_name, barabasi), (erdos_name, erdos), (watts_name, watts), (rgg_name, rgg)]
         graph_filename::String = temp_save_edgelist(g)
         for rho in rhos
-            push!(simulations, SimulationConfigurationItem(uuid=UUIDs.uuid4(),
-                routing_method="minimal_paths",
-                graph_file_name=graph_filename,
-                message_generation=rho,
-                max_iterations=iterations,
-                warm_up_iterations=Int(20 * sampling_time),
-                graph_generation_info=Dict("graph_type" => graph_type, "is_adapted_capacity" => true),
-                modifiers=[ModifierEdgeCapacity(free_flow_rate, sampling_time,
-                    minimal_capacity, multiplier)],
-                observers=GraphTraffic.Schema.ObserversUnion[ObserverEdgeCapacity(sampling_time)]
-            ))
-            push!(simulations, SimulationConfigurationItem(uuid=UUIDs.uuid4(),
-                routing_method="minimal_paths",
-                graph_file_name=graph_filename,
-                message_generation=rho,
-                max_iterations=iterations,
-                warm_up_iterations=Int(0.9 * iterations),
-                graph_generation_info=Dict("graph_type" => graph_type, "is_adapted_capacity" => false),
-                observers=GraphTraffic.Schema.ObserversUnion[ObserverEdgeCapacity(sampling_time)]
-            ))
+            for repetition in 1:repetitions
+                push!(simulations, SimulationConfigurationItem(uuid=UUIDs.uuid4(),
+                    routing_method="minimal_paths",
+                    graph_file_name=graph_filename,
+                    message_generation=rho,
+                    max_iterations=iterations,
+                    warm_up_iterations=Int(20 * sampling_time),
+                    graph_generation_info=Dict("graph_type" => graph_type, "is_adapted_capacity" => true),
+                    modifiers=[ModifierEdgeCapacity(free_flow_rate, sampling_time,
+                        minimal_capacity, multiplier)],
+                    observers=GraphTraffic.Schema.ObserversUnion[ObserverEdgeCapacity(sampling_time)]
+                ))
+                push!(simulations, SimulationConfigurationItem(uuid=UUIDs.uuid4(),
+                    routing_method="minimal_paths",
+                    graph_file_name=graph_filename,
+                    message_generation=rho,
+                    max_iterations=iterations,
+                    warm_up_iterations=Int(0.9 * iterations),
+                    graph_generation_info=Dict("graph_type" => graph_type, "is_adapted_capacity" => false),
+                    observers=GraphTraffic.Schema.ObserversUnion[ObserverEdgeCapacity(sampling_time)]
+                ))
+            end
         end
     end
     run_rust_cli(simulations, hdf5_filename, force_overwrite=true)
@@ -85,7 +88,15 @@ function __preprocess_data()
                 avg_traveling_time=get_avg_traveling_time(sim_result)
             )
         end
-        DataFrame(data)
+        df = DataFrame(data)
+        df = combine(groupby(df, [:graph_type, :is_adapted_capacity, :msg_generation]),
+            :mean_capacity_over_E => mean => :mean_capacity_over_E_mean,
+            :mean_capacity_over_E => std => :mean_capacity_over_E_std,
+            :avg_traveling_time => mean => :avg_traveling_time_mean,
+            :avg_traveling_time => std => :avg_traveling_time_std,
+        )
+        sort!(df, [:graph_type, :is_adapted_capacity, :msg_generation])
+        return df
     end
 
 end
@@ -124,12 +135,14 @@ function plot()
         graph_type = first(sub_df.graph_type)
         color = topology_to_color[graph_type]
         traveling_time_axis = is_adapted ? ax_traveling_time_adapted : ax_traveling_time_not_adapted
-        scatter!(traveling_time_axis, sub_df.msg_generation, sub_df.avg_traveling_time,
+        scatter!(traveling_time_axis, sub_df.msg_generation, sub_df.avg_traveling_time_mean,
             color=color, label=graph_type)
+        errorbars!(traveling_time_axis, sub_df.msg_generation, sub_df.avg_traveling_time_mean, sub_df.avg_traveling_time_std,
+            color=color, alpha=0.35)
         if is_adapted
-            scatter!(ax_capacity, sub_df.msg_generation, sub_df.mean_capacity_over_E,
+            scatter!(ax_capacity, sub_df.msg_generation, sub_df.mean_capacity_over_E_mean,
                 color=color, label=graph_type)
-            errorbars!(ax_capacity, sub_df.msg_generation, sub_df.mean_capacity_over_E, sub_df.std_capacity_over_E,
+            errorbars!(ax_capacity, sub_df.msg_generation, sub_df.mean_capacity_over_E_mean, sub_df.mean_capacity_over_E_std,
                 color=color, alpha=0.35)
         end
     end
