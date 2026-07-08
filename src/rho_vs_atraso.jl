@@ -107,7 +107,7 @@ function __plot_rho_vs_efficiency(df_efficiency, df_rho_critico_estimado)
     fig_travel = Figure(size=size)
     fig_free_flow = Figure(size=size)
     ax_free_flow = Axis(fig_free_flow[1, 1];
-        xlabel=L"Geração de mensagens ($\rho$)",
+        xlabel=L"Taxa de geração de mensagens ($\rho$)",
         ylabel="Fluxo livre médio (100%)",
         xscale=log10,
         yminorgridcolor=:gray85,
@@ -115,13 +115,13 @@ function __plot_rho_vs_efficiency(df_efficiency, df_rho_critico_estimado)
         yminorticks=IntervalsBetween(9),)
     ylims!(ax_free_flow, 0, 110)
     ax_delay = Axis(fig_delay[1, 1];
-        xlabel=L"Geração de mensagens ($\rho$)",
+        xlabel=L"Taxa de geração de mensagens ($\rho$)",
         ylabel=L"Atraso médio ($\delta$)",
         xscale=log10,
         yscale=log10,
     )
     ax_travel = Axis(fig_travel[1, 1];
-        xlabel=L"Geração de mensagens ($\rho$)",
+        xlabel=L"Taxa de geração de mensagens ($\rho$)",
         ylabel="Tempo médio de viagem",
         xscale=log10,
         yscale=log10,
@@ -145,7 +145,7 @@ function __plot_rho_vs_efficiency(df_efficiency, df_rho_critico_estimado)
             color=color, linestyle=:dash, linewidth=3, alpha=0.5)
         scatter!(ax_free_flow, sub_df.msg_generation, 100 .* sub_df.avg_free_flow,
             color=color, label=g_type.graph_type)
-        vlines!(ax_delay, df_rho_critico_estimado[df_rho_critico_estimado.graph_type.==g_type.graph_type, :rho_critico_estimado],
+        vlines!(ax_delay, df_rho_critico_estimado[df_rho_critico_estimado.graph_type .== g_type.graph_type, :rho_critico_estimado],
             color=color, linestyle=:dash, linewidth=3, alpha=0.7)
     end
 
