@@ -107,7 +107,7 @@ function plot()
     sort!(df, [:graph_type, :msg_generation])
     fig_traveling_time = Figure(size=(900, 550))
     fig_capacity = Figure(size=(500, 500))
-    xlabel = L"Geração de mensagens ($\rho$)"
+    xlabel = L"Taxa de geração de mensagens ($\rho$)"
     ylabel_traveling_time = "Tempo médio de viagem"
     ax_capacity = Axis(fig_capacity[1, 1];
         xlabel=xlabel,

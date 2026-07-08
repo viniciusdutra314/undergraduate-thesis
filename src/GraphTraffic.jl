@@ -137,7 +137,7 @@ function run_rust_cli(config::SimulationConfiguration, filename::String; num_thr
     force_overwrite::Bool=false)
     cd(normpath(@__DIR__, "..", "GraphTraffic-rs")) do
         run(`cargo test`)
-        run(`cargo build --release`)
+        run(addenv(`cargo build --release`, "RUSTFLAGS" => "-C target-cpu=native"))
         mktempdir() do temp_path
             temp_json_filename::String = joinpath(temp_path, "config.json")
             open(temp_json_filename, "w") do io
