@@ -109,9 +109,8 @@ function __plot_correlations(df)
     sort!(df, :visibility)
 
     ax_intermediação = Axis(fig[1, 1];
-        title="Correlação Intermediação x Capacidade",
-        ylabel="Porcentagem (100%)",
         xlabel="Visibilidade",
+        ylabel="Intermediação x Capacidade (R² x 100)",
         xticks=xticks,
         yticks=0:25:100,
     )
@@ -119,9 +118,8 @@ function __plot_correlations(df)
     scatter!(ax_intermediação, df.visibility, 100 * df.r_squared_mean, color=color)
     errorbars!(ax_intermediação, df.visibility, 100 * df.r_squared_mean, 100 * df.r_squared_std, color=color, alpha=0.35)
     ax_spread = Axis(fig[1, 2];
-        title="Coeficiente de variação das capacidades (σ/μ)",
         xlabel="Visibilidade",
-        ylabel="Porcentagem (100%)",
+        ylabel="Variação das capacidades (σ/μ x 100)",
         xticks=xticks,
     )
     scatter!(ax_spread, df.visibility, 100 * df.cv_capacity_mean, color=color)
@@ -161,7 +159,7 @@ function __plot_histograms()
         yscale=log10,
     )
     barplot!(ax, 100 * freqs, label="Frequência", color=color)
-    lines!(ax, 100 * (1.0 .- cumsum(freqs[1:end-1])), linewidth=2,
+    lines!(ax, 100 * (1.0 .- cumsum(freqs[1:(end-1)])), linewidth=2,
         label="Função Sobrevivência", color=:green, linestyle=:dash)
     axislegend(ax, position=:rt)
     save_figure("visibilidade_limitada_grid", fig)
